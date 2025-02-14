@@ -1,9 +1,9 @@
 #include <FastLED.h>
 
-#define NUM_LEDS 100           // Número total de LEDs por tira
+#define NUM_LEDS 200           // Número total de LEDs por tira
 #define DATA_PIN_1 3           // Pin de datos para el primer par
 #define DATA_PIN_2 6           // Pin de datos para el segundo par
-#define BRIGHTNESS 10          // Brillo general (0-255)
+#define BRIGHTNESS 200          // Brillo general (0-255)
 #define RESET_COMMAND 30     // Comando de reinicio desde Max MSP
 #define LED_BUILTIN 13
 
@@ -39,7 +39,7 @@ void loop() {
       startTime = millis();    // Reinicia el temporizador para la fase apagada
     }
   } else {
-    if (elapsed < 10) {        // Fase apagada: 1 minuto (60 segundos) (primeros 5 segundos son apagados)
+    if (elapsed < 5) {        // Fase apagada: 1 minuto (60 segundos) (primeros 5 segundos son apagados)
       showChaosEffect();
     } else {
       isOnPhase = true;        // Cambia a la fase encendida
@@ -50,22 +50,22 @@ void loop() {
 
 void showContemplativeEffect() {
   const int waveSize = 20; // Número de LEDs en la ola
-  const int maxBrightness = 70;
+  const int maxBrightness = 200;
   const int minBrightness = 5;
   const int waveSpeed = 50;
   const int loopLength = NUM_LEDS + waveSize;
   bool stopLoop = false;
 
   for (int i = 0; i < NUM_LEDS; i++) {
-    fill_solid(leds1, NUM_LEDS, CRGB::Black);
-    fill_solid(leds2, NUM_LEDS, CRGB::Black);
+    fill_solid(leds1, NUM_LEDS, CRGB(0, minBrightness, 0));
+    fill_solid(leds2, NUM_LEDS, CRGB(0, minBrightness, 0));
     
     for (int j = 0; j < waveSize; j++) {
       int ledIndex = (i - j + NUM_LEDS) % NUM_LEDS;
       float positionFactor = abs((waveSize / 2.0) - j) / (waveSize / 2.0);
       int brightness = minBrightness + (maxBrightness - minBrightness) * (1.0 - positionFactor);
-      leds1[ledIndex] = CRGB(0, 0, brightness);
-      leds2[ledIndex] = CRGB(0, 0, brightness);
+      leds1[ledIndex] = CRGB(0, brightness, 0);
+      leds2[ledIndex] = CRGB(0, brightness, 0);
       if(checkResetSignal()) {
         stopLoop = true;
         break;
@@ -84,8 +84,6 @@ void showContemplativeEffect() {
 void showChaosEffect() {
   fill_solid(leds1, NUM_LEDS, CRGB::Black);
   fill_solid(leds2, NUM_LEDS, CRGB::Black);
-  delayWithReset(5000); // 5 segundos de espera con chequeo de reset
-
   int numSegments1 = random(2, 5); // Número aleatorio de segmentos para el primer par
   int numSegments2 = random(2, 5); // Número aleatorio de segmentos para el segundo par
 
@@ -118,8 +116,6 @@ bool checkResetSignal() {
       delay(1000);                      // wait for a second
       digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
       Serial.print("adasd\n");
-      fill_solid(leds1, NUM_LEDS, CRGB::Black);
-    fill_solid(leds2, NUM_LEDS, CRGB::Black);
       return true;
     }
   }
@@ -127,10 +123,14 @@ bool checkResetSignal() {
 }
 
 void delayWithReset(unsigned long duration) {
+  fill_solid(leds1, NUM_LEDS, CRGB::Black);
+  fill_solid(leds2, NUM_LEDS, CRGB::Black);
+  FastLED.show();
   unsigned long start = millis();
   while (millis() - start < duration) {
     if (checkResetSignal()) {
       break;
     }
+    delay(100);
   }
 }
