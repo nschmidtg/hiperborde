@@ -14,6 +14,7 @@ CRGB leds2[NUM_LEDS];         // Array para el segundo par de tiras
 unsigned long startTime = 0;   // Marca de tiempo para el ciclo
 bool isOnPhase = true;         // Indica si estamos en la fase encendida
 
+
 void setup() {
   FastLED.addLeds<WS2811, DATA_PIN_1, GRB>(leds1, NUM_LEDS);
   FastLED.addLeds<WS2811, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
