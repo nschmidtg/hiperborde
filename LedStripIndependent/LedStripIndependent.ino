@@ -13,6 +13,7 @@ CRGB leds2[NUM_LEDS];         // Array para el segundo par de tiras
 
 unsigned long startTime = 0;   // Marca de tiempo para el ciclo
 bool isOnPhase = true;         // Indica si estamos en la fase encendida
+int phase = 0; // 0 apagado, 1 esperando, 2 caos
 
 
 void setup() {
@@ -31,21 +32,44 @@ void loop() {
   unsigned long currentTime = millis();
   unsigned long elapsed = (currentTime - startTime) / 1000; // Tiempo transcurrido en segundos
 
-  if (isOnPhase) {
+  if (phase == 0) {
     if (elapsed < 10) {       // Fase encendida: 4 minutos (240 segundos)
       showContemplativeEffect();
     } else {
-      isOnPhase = false;       // Cambia a la fase apagada
+      phase = 1;       // Cambia a la fase apagada
       startTime = millis();    // Reinicia el temporizador para la fase apagada
     }
-  } else {
-    if (elapsed < 5) {        // Fase apagada: 1 minuto (60 segundos) (primeros 5 segundos son apagados)
+  } else if (phase == 1) {
+    if (elapsed < 3) {       // Fase apagado: 3 segundos
+      offAndWait();
+    } else {
+      phase = 2;       // Cambia a la fase apagada
+      startTime = millis();    // Reinicia el temporizador para la fase apagada
+    }
+  } 
+  else if (phase == 2) {
+    if (elapsed < 5) {        
       showChaosEffect();
     } else {
-      isOnPhase = true;        // Cambia a la fase encendida
-      startTime = millis();    // Reinicia el temporizador para la fase encendida
+      phase = 3;       
+      startTime = millis();
     }
   }
+   else if (phase == 3) {
+    if (elapsed < 3) {       // Fase apagado: 3 segundos
+      offAndWait();
+    } else {
+      phase = 0;       
+      startTime = millis();
+    }
+  } 
+}
+
+void offAndWait() {
+  fill_solid(leds1, NUM_LEDS, CRGB::Black);
+  fill_solid(leds2, NUM_LEDS, CRGB::Black);
+  FastLED.show();
+  delay(50);
 }
 
 void showContemplativeEffect() {
