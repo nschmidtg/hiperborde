@@ -1,7 +1,7 @@
 #include <FastLED.h>
 #include <Arduino.h>
 
-#define NUM_LEDS 200           // Número total de LEDs por tira
+#define NUM_LEDS 100           // Número total de LEDs por tira
 #define DATA_PIN_1 3           // Pin de datos para el primer par
 #define DATA_PIN_2 6           // Pin de datos para el segundo par
 #define BRIGHTNESS 200         // Brillo general (0-255)
