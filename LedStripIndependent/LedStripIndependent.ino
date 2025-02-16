@@ -11,6 +11,7 @@
 CRGB leds1[NUM_LEDS];         // Array para el primer par de tiras
 CRGB leds2[NUM_LEDS];         // Array para el segundo par de tiras
 
+
 // Variables globales
 int phase = 0;
 unsigned long startTime;
@@ -98,6 +99,8 @@ void showChaosEffect() {
 bool checkResetSignal() {
     if (Serial.available() > 0) {
         int command = Serial.read();
+        Serial.print(command);
+        Serial.print('\n');
         if (command == RESET_COMMAND) {
             startTime = millis();
             Serial.println(command);
@@ -122,7 +125,7 @@ void setup() {
     FastLED.setBrightness(BRIGHTNESS);
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-    Serial.begin(9600);
+    Serial.begin(115200);
     startTime = millis();
 }
 
