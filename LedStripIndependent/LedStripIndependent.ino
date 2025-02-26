@@ -5,7 +5,7 @@
 #define DATA_PIN_1 3           // Pin de datos para el primer par
 #define DATA_PIN_2 6           // Pin de datos para el segundo par
 #define BRIGHTNESS 200         // Brillo general (0-255)
-#define RESET_COMMAND 30       // Comando de reinicio desde Max MSP
+#define RESET_COMMAND 255       // Comando de reinicio desde Max MSP
 #define LED_BUILTIN 13
 
 CRGB leds1[NUM_LEDS];         // Array para el primer par de tiras
@@ -15,6 +15,7 @@ CRGB leds2[NUM_LEDS];         // Array para el segundo par de tiras
 // Variables globales
 int phase = 0;
 unsigned long startTime;
+int tempBrightness = 0;
 
 class PhaseHandler {
 public:
@@ -48,29 +49,30 @@ void offAndWait() {
 
 void showContemplativeEffect() {
     const int waveSize = 20;
-    const int maxBrightness = 200;
-    const int minBrightness = 5;
+    const int maxBrightness = 255;
+    const int minBrightness = tempBrightness;
     const int waveSpeed = 50;
     bool stopLoop = false;
 
     fill_solid(leds1, NUM_LEDS, CRGB(0, minBrightness, 0));
     fill_solid(leds2, NUM_LEDS, CRGB(0, minBrightness, 0));
-    for (int i = 0; i < NUM_LEDS; i++) {
-        for (int j = 0; j < waveSize; j++) {
-            int ledIndex = (i - j + NUM_LEDS) % NUM_LEDS;
-            float positionFactor = abs((waveSize / 2.0) - j) / (waveSize / 2.0);
-            int brightness = minBrightness + (maxBrightness - minBrightness) * (1.0 - positionFactor);
-            leds1[ledIndex] = CRGB(0, brightness, 0);
-            leds2[ledIndex] = CRGB(0, brightness, 0);
-            if (checkResetSignal()) {
-                stopLoop = true;
-                break;
-            }
-        }
-        if (stopLoop) break;
-        FastLED.show();
-        delay(waveSpeed);
-    }
+    // for (int i = 0; i < NUM_LEDS; i++) {
+    //     for (int j = 0; j < waveSize; j++) {
+    //         int ledIndex = (i - j + NUM_LEDS) % NUM_LEDS;
+    //         float positionFactor = abs((waveSize / 2.0) - j) / (waveSize / 2.0);
+    //         int brightness = minBrightness + (maxBrightness - minBrightness) * (1.0 - positionFactor);
+    //         leds1[ledIndex] = CRGB(0, brightness, 0);
+    //         leds2[ledIndex] = CRGB(0, brightness, 0);
+    //         if (checkResetSignal()) {
+    //             stopLoop = true;
+    //             break;
+    //         }
+    //     }
+    //     if (stopLoop) break;
+    //     FastLED.show();
+    //     delay(waveSpeed);
+    // }
+    FastLED.show();
 }
 
 void showChaosEffect() {
@@ -99,6 +101,7 @@ void showChaosEffect() {
 bool checkResetSignal() {
     if (Serial.available() > 0) {
         int command = Serial.read();
+        tempBrightness = command;
         Serial.print(command);
         Serial.print('\n');
         if (command == RESET_COMMAND) {
@@ -125,7 +128,7 @@ void setup() {
     FastLED.setBrightness(BRIGHTNESS);
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-    Serial.begin(115200);
+    Serial.begin(14400);
     startTime = millis();
 }
 
