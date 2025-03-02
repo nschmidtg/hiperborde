@@ -1,7 +1,7 @@
 #include <FastLED.h>
 #include <Arduino.h>
 
-#define NUM_LEDS 100           // Número total de LEDs por tira
+#define NUM_LEDS 200           // Número total de LEDs por tira
 #define DATA_PIN_1 3           // Pin de datos para el primer par
 #define DATA_PIN_2 6           // Pin de datos para el segundo par
 #define BRIGHTNESS 200         // Brillo general (0-255)
@@ -56,22 +56,22 @@ void showContemplativeEffect() {
 
     fill_solid(leds1, NUM_LEDS, CRGB(0, minBrightness, 0));
     fill_solid(leds2, NUM_LEDS, CRGB(0, minBrightness, 0));
-    // for (int i = 0; i < NUM_LEDS; i++) {
-    //     for (int j = 0; j < waveSize; j++) {
-    //         int ledIndex = (i - j + NUM_LEDS) % NUM_LEDS;
-    //         float positionFactor = abs((waveSize / 2.0) - j) / (waveSize / 2.0);
-    //         int brightness = minBrightness + (maxBrightness - minBrightness) * (1.0 - positionFactor);
-    //         leds1[ledIndex] = CRGB(0, brightness, 0);
-    //         leds2[ledIndex] = CRGB(0, brightness, 0);
-    //         if (checkResetSignal()) {
-    //             stopLoop = true;
-    //             break;
-    //         }
-    //     }
-    //     if (stopLoop) break;
-    //     FastLED.show();
-    //     delay(waveSpeed);
-    // }
+    for (int i = 0; i < NUM_LEDS; i++) {
+        for (int j = 0; j < waveSize; j++) {
+            int ledIndex = (i - j + NUM_LEDS) % NUM_LEDS;
+            float positionFactor = abs((waveSize / 2.0) - j) / (waveSize / 2.0);
+            int brightness = minBrightness + (maxBrightness - minBrightness) * (1.0 - positionFactor);
+            leds1[ledIndex] = CRGB(0, brightness, 0);
+            leds2[ledIndex] = CRGB(0, brightness, 0);
+            if (checkResetSignal()) {
+                stopLoop = true;
+                break;
+            }
+        }
+        if (stopLoop) break;
+        FastLED.show();
+        delay(waveSpeed);
+    }
     FastLED.show();
 }
 
