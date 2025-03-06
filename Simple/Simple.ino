@@ -1,42 +1,49 @@
 #include <Arduino.h>
 
-#define RESET_COMMAND 30  // Command received from MaxMSP
-#define LED_BUILTIN 13
-
-unsigned long startTime;
-
-bool checkResetSignal() {
-    if (Serial.available() > 0) {
-        int command = Serial.read();
-        Serial.println(command);  // Corrected string formatting
-        if (command == RESET_COMMAND) {
-            startTime = millis();
-            Serial.println("chao " + String(command));
-            
-            // Blink LED to show command was received
-            digitalWrite(LED_BUILTIN, HIGH);
-            delay(100);
-            digitalWrite(LED_BUILTIN, LOW);
-            return true;
-        }
-    }
-    return false;
-}
-
 void setup() {
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, LOW);
-    Serial.begin(14400);
-    startTime = millis();
-}
-
-void loop() {
-    checkResetSignal();
+    // put your setup code here, to run once:
+    Serial.begin(115200);
+  }
+  
+  void loop() {
     
-    // Print elapsed time every second
-    unsigned long currentTime = millis();
-    unsigned long elapsed = (currentTime - startTime) / 1000;
-    //Serial.println("Elapsed time: " + String(elapsed) + "s");
-    
-    //delay(1000);  // Prevents spamming the serial monitor
-}
+    // Check if data is available to read
+    if (Serial.available() >= 9) {
+      byte syncByte = Serial.read();
+  
+      if (syncByte == 255) {
+        Serial.println("***********************************");
+      // Read two bytes
+      byte byte1 = Serial.read();
+      byte byte2 = Serial.read();
+      byte byte3 = Serial.read();
+      byte byte4 = Serial.read();
+      byte byte5 = Serial.read();
+      byte byte6 = Serial.read();
+      byte byte7 = Serial.read();
+      byte byte8 = Serial.read();
+      
+      // Print the values of the two bytes
+      Serial.print("Byte 1: ");
+      Serial.println(byte1);  // Print in hexadecimal format
+      Serial.print("Byte 2: ");
+      Serial.println(byte2);
+      Serial.print("Byte 3: ");
+      Serial.println(byte3);  // Print in hexadecimal format
+      Serial.print("Byte 4: ");
+      Serial.println(byte4);
+      Serial.print("Byte 5: ");
+      Serial.println(byte5);  // Print in hexadecimal format
+      Serial.print("Byte 6: ");
+      Serial.println(byte6);
+      Serial.print("Byte 7: ");
+      Serial.println(byte7);  // Print in hexadecimal format
+      Serial.print("Byte 8: ");
+      Serial.println(byte8);
+      }  else {
+        // If sync byte doesn't match, we ignore this byte and wait for the correct sync
+        Serial.println("Sync byte mismatch, waiting for 0xFF...");
+      }
+    }
+  }
+  
