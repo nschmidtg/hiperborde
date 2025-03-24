@@ -43,7 +43,7 @@ CRGB leds2[NUM_LEDS];
 
 // Timing
 unsigned long lastFrameTime = 0;
-const int frameDelay = 50;      // ~50 FPS
+const int frameDelay = 50;      // IMPORTANT!! increase if lcd screen is flickering.
 
 void setup() {
     Serial.begin(115200);  // Start Serial
