@@ -2,7 +2,7 @@
 
 # Set variables
 # SKETCH_NAME="Simple/Simple.ino"  # Change this to your actual .ino file name
-SKETCH_NAME="SimpleSend/SimpleSend.ino"  # Change this to your actual .ino file name
+SKETCH_NAME="SerialPackage/SerialPackage.ino"  # Change this to your actual .ino file name
 BOARD_FQBN="arduino:avr:mega"  # Fully Qualified Board Name for Arduino Mega
 BAUD_RATE=115200               # Baud rate for serial communication
 
@@ -44,6 +44,6 @@ else
 fi
 
 # Open serial monitor
-# echo "Opening Serial Monitor (Baud: $BAUD_RATE)..."
+echo "Opening Serial Monitor (Baud: $BAUD_RATE)..."
 # eval $STTY_CMD
 # cat $PORT
