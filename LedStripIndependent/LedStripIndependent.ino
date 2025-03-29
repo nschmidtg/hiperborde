@@ -20,6 +20,7 @@ byte start1;
 byte start2;
 byte reset;
 byte reset_flag = 0;
+int i = 0; // Variable de control para la animación
 
  // Timing
 unsigned long lastFrameTime = 0;
@@ -34,6 +35,22 @@ int phase = 0;
 unsigned long startTime;
 int tempBrightness = 0;
 
+bool checkResetSignal() {
+    if (reset_flag == RESET_MAXMSP) {  // Check reset byte
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Reset");
+        delay(1000);
+        fill_solid(leds1, NUM_LEDS, CRGB::Black);
+        fill_solid(leds2, NUM_LEDS, CRGB::Black);
+        FastLED.show();
+        startTime = millis();
+        reset_flag = 0;
+        return true;
+    }    
+    return false;
+}
+
 class PhaseHandler {
 public:
     using EffectFunction = void(*)();
@@ -42,6 +59,11 @@ public:
         : effect(effect), duration(duration), nextPhase(nextPhase) {}
 
     bool update(unsigned long elapsed, int &phase, unsigned long &startTime) {
+        if (checkResetSignal()) {
+            phase = 0;  // Reset phase
+            i = 0;
+            return false;  // Reset signal received, do not update phase
+        }
         if (elapsed < duration) {
             effect();
             return false;
@@ -64,14 +86,7 @@ void offAndWait() {
 }
 
 void showContemplativeEffect() {
-    static int i = 0;  // Índice del LED actual en la animación
     static bool stopLoop = false;
-
-    if (stopLoop) {
-        i = 0;  // Reiniciar animación para la próxima ejecución
-        stopLoop = false;
-        return;
-    }
 
     const int waveSize = 20;
     const int maxBrightness = 255;
@@ -87,16 +102,10 @@ void showContemplativeEffect() {
 
     FastLED.show();
 
-    if (checkResetSignal()) {
-        stopLoop = true;
-        return;
-    }
-
     i++;  // Avanzar al siguiente LED en la próxima iteración
 
     if (i >= NUM_LEDS) {
         i = 0;  // Reiniciar animación cuando llegue al final
-        stopLoop = true;
     }
 }
 
@@ -123,22 +132,7 @@ void showChaosEffect() {
     FastLED.show();
 }
 
-bool checkResetSignal() {
-    if (reset_flag == RESET_MAXMSP) {  // Check reset byte
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Reset");
-        delay(1000);
-        fill_solid(leds1, NUM_LEDS, CRGB::Black);
-        fill_solid(leds2, NUM_LEDS, CRGB::Black);
-        FastLED.show();
-        startTime = millis();
-        phase = 0; // Reset phase
-        reset_flag = 0;
-        return true;
-    }    
-    return false;
-}
+
 
 PhaseHandler phase0(showContemplativeEffect, 10, 1);
 PhaseHandler phase1(offAndWait, 3, 2);
@@ -152,14 +146,12 @@ void setup() {
     startTime = millis();
     Serial.begin(460800);
     lcd.begin(16, 2);
-    lcd.print("SimpleSend");
+    lcd.print("Hiperborde");
 }
 
 void loop() {
     unsigned long currentTime = millis();
     unsigned long elapsed = (currentTime - startTime) / 1000;
-    lcd.setCursor(0, 1);
-    lcd.print(currentTime);
     if (currentTime - lastFrameTime >= frameDelay) {
         lastFrameTime = currentTime;
         switch (phase) {
@@ -191,7 +183,7 @@ void serialEvent() {
             start2 = buffer[4];  // Start wave strip 2
             reset_flag = buffer[5];  // Reset flag
             updateLCD(); // Update LCD with new values
-            checkResetSignal();  // Procesar nuevos datos si llegan
+            //checkResetSignal();  // Procesar nuevos datos si llegan
         }
     }
 }
