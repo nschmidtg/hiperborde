@@ -17,6 +17,7 @@ const byte RESET_MAXMSP = 254;  // Reset byte for data from Max/MSP
 #define LED_PIN2     3          // Second LED strip connected to pin 3
 #define NUM_LEDS     150        // 150 LEDs per strip
 #define LEDS_PER_M   60         // 60 LEDs per meter
+#define BRIGHTNESS 200      // General brightness (0-255)
 
 // Wave parameters
 byte height;                    // Max brightness of wave (0-255)
@@ -43,24 +44,33 @@ CRGB leds2[NUM_LEDS];
 
 // Timing
 unsigned long lastFrameTime = 0;
-const int frameDelay = 50;      // IMPORTANT!! increase if lcd screen is flickering.
+const int frameDelay = 100;      // IMPORTANT!! increase if lcd screen is flickering.
 
 void setup() {
     Serial.begin(115200);  // Start Serial
-    lcd.begin(16, 2);
 
-    // Initialize LED strips
+    lcd.begin(16, 2);
+    lcd.clear();
+    // Clear LED strips
     FastLED.addLeds<WS2811, LED_PIN1, GRB>(leds1, NUM_LEDS);
     FastLED.addLeds<WS2811, LED_PIN2, GRB>(leds2, NUM_LEDS);
-
-    // Clear LED strips
+    FastLED.setBrightness(BRIGHTNESS);
     FastLED.clear();
     FastLED.show();
+    delay(1000);
+    lcd.print("Hiperborde");
+
+    // Initialize LED strips
+    
+
+    
+    
 
     // Initialize wave arrays
     for (int i = 0; i < MAX_WAVES; i++) {
         waves1[i].active = false;
         waves2[i].active = false;
+
     }
 }
 
@@ -85,9 +95,7 @@ void createWave(Wave* waves, byte waveHeight, byte waveSpeed) {
   // Update all waves in the array and render to the LED strip
 void updateWaves(Wave* waves, CRGB* leds) {
     // Clear the LED strip first
-    for (int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = CRGB::Black;
-    }
+    FastLED.clear();
     
     // Process each active wave
     for (int w = 0; w < MAX_WAVES; w++) {
@@ -112,70 +120,80 @@ void updateWaves(Wave* waves, CRGB* leds) {
             byte brightness = waves[w].height * (1.0 - (abs(i) / 15.0));
             
             // Add this brightness to existing LED value (for overlapping waves)
-            leds[pos].r += brightness;
-            leds[pos].g += brightness;
-            leds[pos].b += brightness;
+            leds[pos] = CRGB(0, brightness, 0);
           }
         }
       }
     }
   }
+
+void processPackage() {
+  if (packetReady && currentPackage[0] == SYNC_MAXMSP) {  // Ensure first byte is 255
+    if (memcmp(lastPackage, currentPackage, PACKET_SIZE) == 0) {
+        return;  // Ignore repeated packets
+    }
+    if((currentPackage[3] != 0 && currentPackage[3] != 1) || (currentPackage[4] != 0 && currentPackage[4] != 1)) {
+        return;  // Ignore invalid start1 values
+    }
+
+    memcpy(lastPackage, currentPackage, PACKET_SIZE); // Store last received packet
+
+    height = currentPackage[1];  // Wave height
+    speed = currentPackage[2];   // Wave speed
+    start1 = currentPackage[3];  // Start wave strip 1
+    start2 = currentPackage[4];  // Start wave strip 2
+    reset_flag = currentPackage[5];  // Reset flag
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("H:"); lcd.print(height);  // Wave height
+    lcd.print(" S:"); lcd.print(speed); // Wave speed
+
+    lcd.setCursor(0, 1);
+    lcd.print("S1:"); lcd.print(start1); // Start wave strip 1
+    lcd.print(" S2:"); lcd.print(start2); // Start wave strip 2
+
+    if (reset_flag == RESET_MAXMSP) {  // Check reset byte
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Reset");
+
+        // Clear all waves
+        for (int i = 0; i < MAX_WAVES; i++) {
+            waves1[i].active = false;
+            waves2[i].active = false;
+        }
+        // Clear LED strips
+        fill_solid(leds1, NUM_LEDS, CRGB::Blue);
+        fill_solid(leds2, NUM_LEDS, CRGB::Blue);
+        FastLED.show();
+        delay(1000);
+        fill_solid(leds1, NUM_LEDS, CRGB::Black);
+        fill_solid(leds2, NUM_LEDS, CRGB::Black);
+        FastLED.show();
+        delay(1000);
+        FastLED.clear();
+        noInterrupts();
+        FastLED.show();
+        interrupts();
+        delay(1000);
+    }
+
+    // Create new waves based on start flags
+    if (start1 == 1) {
+        createWave(waves1, height, speed);
+    }
+    
+    if (start2 == 1) {
+        createWave(waves2, height, speed);
+    }
+    packetReady = false;  // Reset flag to receive new packets
+  }
+}
   
 
 void loop() {
-    if (packetReady && currentPackage[0] == SYNC_MAXMSP) {  // Ensure first byte is 255
-        if (memcmp(lastPackage, currentPackage, PACKET_SIZE) == 0) {
-            return;  // Ignore repeated packets
-        }
-        if((currentPackage[3] != 0 && currentPackage[3] != 1) || (currentPackage[4] != 0 && currentPackage[4] != 1)) {
-            return;  // Ignore invalid start1 values
-        }
-
-        memcpy(lastPackage, currentPackage, PACKET_SIZE); // Store last received packet
-
-        height = currentPackage[1];  // Wave height
-        speed = currentPackage[2];   // Wave speed
-        start1 = currentPackage[3];  // Start wave strip 1
-        start2 = currentPackage[4];  // Start wave strip 2
-        reset_flag = currentPackage[5];  // Reset flag
-
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("H:"); lcd.print(height);  // Wave height
-        lcd.print(" S:"); lcd.print(speed); // Wave speed
-
-        lcd.setCursor(0, 1);
-        lcd.print("S1:"); lcd.print(start1); // Start wave strip 1
-        lcd.print(" S2:"); lcd.print(start2); // Start wave strip 2
-
-        if (reset_flag == RESET_MAXMSP) {  // Check reset byte
-            lcd.clear();
-            lcd.setCursor(0, 0);
-            lcd.print("Reset");
-
-            // Clear all waves
-            for (int i = 0; i < MAX_WAVES; i++) {
-                waves1[i].active = false;
-                waves2[i].active = false;
-            }
-            // Clear LED strips
-            FastLED.clear();
-            noInterrupts();
-            FastLED.show();
-            interrupts();
-            delay(1000);
-        }
-
-        // Create new waves based on start flags
-        if (start1 == 1) {
-            createWave(waves1, height, speed);
-        }
-        
-        if (start2 == 1) {
-            createWave(waves2, height, speed);
-        }
-        packetReady = false;  // Reset flag to receive new packets
-    }
+    processPackage(); // Process incoming data
     // Check for frame timing
     unsigned long currentTime = millis();
     if (currentTime - lastFrameTime >= frameDelay) {
@@ -185,10 +203,7 @@ void loop() {
         updateWaves(waves1, leds1);
         updateWaves(waves2, leds2);
         
-        // Show the updated LED states
-        noInterrupts();
         FastLED.show();
-        interrupts();
     }
 }
 

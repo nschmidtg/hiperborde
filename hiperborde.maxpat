@@ -43,7 +43,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 298.0, 1244.0, 126.0, 22.0 ],
-					"text" : "255 2 226 0 0 0"
+					"text" : "255 1 228 0 0 0"
 				}
 
 			}
@@ -818,7 +818,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1742.0, 241.0, 184.0, 22.0 ],
-					"text" : "hourly::wave_period[1]] 11.3"
+					"text" : "hourly::wave_period[1]] 11.6"
 				}
 
 			}
@@ -911,7 +911,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1424.0, 230.0, 184.0, 22.0 ],
-					"text" : "hourly::wave_direction[1]] 226"
+					"text" : "hourly::wave_direction[1]] 228"
 				}
 
 			}
@@ -1016,7 +1016,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1131.0, 226.0, 184.0, 22.0 ],
-					"text" : "hourly::wave_height[1]] 2.72"
+					"text" : "hourly::wave_height[1]] 1.58"
 				}
 
 			}
@@ -1188,8 +1188,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "int", "" ],
-					"patching_rect" : [ 169.5, 1244.0, 119.0, 22.0 ],
-					"text" : "serial c 115200 8 1 0"
+					"patching_rect" : [ 169.5, 1244.0, 120.0, 22.0 ],
+					"text" : "serial c 460800 8 1 0"
 				}
 
 			}
@@ -1944,7 +1944,7 @@
 
 			}
  ],
-		"originid" : "pat-12",
+		"originid" : "pat-14",
 		"dependency_cache" : [ 			{
 				"name" : "meteo_parse.js",
 				"bootpath" : "~/hiperborde_code",
