@@ -20,6 +20,7 @@ byte start1;
 byte start2;
 byte reset;
 byte reset_flag = 0;
+bool resetHandled = false; 
 int i = 0; // Variable de control para la animación
 
  // Timing
@@ -36,7 +37,7 @@ unsigned long startTime;
 int tempBrightness = 0;
 
 bool checkResetSignal() {
-    if (reset_flag == RESET_MAXMSP) {  // Check reset byte
+    if (reset_flag == RESET_MAXMSP && !resetHandled) {  // Verificar si se necesita un reset y no se ha manejado
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Reset");
@@ -45,9 +46,10 @@ bool checkResetSignal() {
         fill_solid(leds2, NUM_LEDS, CRGB::Black);
         FastLED.show();
         startTime = millis();
-        reset_flag = 0;
+        reset_flag = 0; // Resetear la señal
+        resetHandled = true;  // Marcar que se ha manejado el reset
         return true;
-    }    
+    }
     return false;
 }
 
@@ -60,8 +62,7 @@ public:
 
     bool update(unsigned long elapsed, int &phase, unsigned long &startTime) {
         if (checkResetSignal()) {
-            phase = 0;  // Reset phase
-            i = 0;
+            handleReset();  // Handle reset if needed
             return false;  // Reset signal received, do not update phase
         }
         if (elapsed < duration) {
@@ -133,6 +134,15 @@ void showChaosEffect() {
 }
 
 
+// Función para manejar el reset en el loop principal
+void handleReset() {
+    if (resetHandled) {
+        // Si el reset fue manejado, podemos hacer el cambio de fase y permitir que todo vuelva a la normalidad
+        phase = 0;
+        resetHandled = false;  // Reseteamos la bandera para que pueda manejarse otro reset más tarde
+        i = 0;
+    }
+}
 
 PhaseHandler phase0(showContemplativeEffect, 10, 1);
 PhaseHandler phase1(offAndWait, 3, 2);
@@ -154,6 +164,7 @@ void loop() {
     unsigned long elapsed = (currentTime - startTime) / 1000;
     if (currentTime - lastFrameTime >= frameDelay) {
         lastFrameTime = currentTime;
+        handleReset();
         switch (phase) {
             case 0: phase0.update(elapsed, phase, startTime); break;
             case 1: phase1.update(elapsed, phase, startTime); break;
@@ -183,6 +194,7 @@ void serialEvent() {
             start2 = buffer[4];  // Start wave strip 2
             reset_flag = buffer[5];  // Reset flag
             updateLCD(); // Update LCD with new values
+            resetHandled = false;
             //checkResetSignal();  // Procesar nuevos datos si llegan
         }
     }
