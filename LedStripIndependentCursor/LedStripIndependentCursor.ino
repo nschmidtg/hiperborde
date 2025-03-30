@@ -20,6 +20,13 @@
 #define PHASE_CHAOS 5000          // 5 seconds
 #define FRAME_TIME 50             // 50ms between frames
 
+#define MAX_WAVES 5  // Maximum number of concurrent waves
+
+struct Wave {
+    int position = 0;
+    bool active = false;
+};
+
 // Global Variables
 CRGB leds1[NUM_LEDS];
 CRGB leds2[NUM_LEDS];
@@ -30,25 +37,42 @@ struct AnimationState {
     uint8_t speed = 0;
     bool start1 = false;
     bool start2 = false;
-    int wavePosition = 0;
+    Wave waves1[MAX_WAVES];  // Waves for strip 1
+    Wave waves2[MAX_WAVES];  // Waves for strip 2
     unsigned long lastFrameTime = 0;
     unsigned long phaseStartTime = 0;
     uint8_t currentPhase = 0;
 } state;
+
+void addWave(Wave waves[]) {
+    // Find first inactive wave slot
+    for (int i = 0; i < MAX_WAVES; i++) {
+        if (!waves[i].active) {
+            waves[i].active = true;
+            waves[i].position = 0;
+            break;
+        }
+    }
+}
 
 void resetAnimation() {
     fill_solid(leds1, NUM_LEDS, CRGB::Black);
     fill_solid(leds2, NUM_LEDS, CRGB::Black);
     FastLED.show();
     
+    // Reset all waves
+    for (int i = 0; i < MAX_WAVES; i++) {
+        state.waves1[i].active = false;
+        state.waves2[i].active = false;
+    }
+    
     state.currentPhase = 0;
-    state.wavePosition = 0;
     state.phaseStartTime = millis();
     
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Reset");
-    delay(100); // Brief delay for visibility
+    delay(100);
 }
 
 void updateLCD() {
@@ -112,23 +136,48 @@ struct SerialProtocol {
     }
 } serial;
 
-
-
 void showContemplativeEffect() {
     fill_solid(leds1, NUM_LEDS, CRGB::Black);
     fill_solid(leds2, NUM_LEDS, CRGB::Black);
     
-    for (int j = 0; j < WAVE_SIZE; j++) {
-        int ledIndex = (state.wavePosition - j + NUM_LEDS) % NUM_LEDS;
-        float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0);
-        int brightness = state.height * (1.0 - positionFactor);
+    // Start new waves when impulse is received
+    if (state.start1) {
+        addWave(state.waves1);
+    }
+    if (state.start2) {
+        addWave(state.waves2);
+    }
+    
+    // Update and render all active waves
+    for (int strip = 0; strip < 2; strip++) {
+        Wave* waves = (strip == 0) ? state.waves1 : state.waves2;
+        CRGB* leds = (strip == 0) ? leds1 : leds2;
         
-        if (state.start1) leds1[ledIndex] = CRGB(0, 255, 0);
-        if (state.start2) leds2[ledIndex] = CRGB(0, 255, 0);
+        for (int w = 0; w < MAX_WAVES; w++) {
+            if (!waves[w].active) continue;
+            
+            // Show wave effect
+            for (int j = 0; j < WAVE_SIZE; j++) {
+                int ledIndex = (waves[w].position - j + NUM_LEDS) % NUM_LEDS;
+                float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0);
+                int brightness = state.height * (1.0 - positionFactor);
+                
+                // Blend with existing LED color if multiple waves overlap
+                CRGB newColor = CRGB(0, brightness, 0);
+                leds[ledIndex] += newColor;
+            }
+            
+            // Advance wave position
+            waves[w].position++;
+            
+            // Deactivate wave when it completes a cycle
+            if (waves[w].position >= NUM_LEDS) {
+                waves[w].active = false;
+            }
+        }
     }
     
     FastLED.show();
-    state.wavePosition = (state.wavePosition + 1) % NUM_LEDS;
 }
 
 void showChaosEffect() {
