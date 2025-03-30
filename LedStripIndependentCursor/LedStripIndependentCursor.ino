@@ -3,7 +3,7 @@
 #include <LiquidCrystal.h>
 
 // LED Configuration
-#define NUM_LEDS 150
+#define NUM_LEDS 100
 #define DATA_PIN_1 2
 #define DATA_PIN_2 3
 #define BRIGHTNESS 200
@@ -20,7 +20,7 @@
 #define PHASE_CHAOS 3000          // 5 seconds
 #define FRAME_TIME 50             // 50ms between frames
 
-#define MAX_WAVES 5  // Maximum number of concurrent waves
+#define MAX_WAVES 10  // Maximum number of concurrent waves
 
 struct Wave {
     int position = 0;
@@ -238,8 +238,8 @@ void updatePhase() {
 }
 
 void setup() {
-    FastLED.addLeds<WS2811, DATA_PIN_1, GRB>(leds1, NUM_LEDS);
-    FastLED.addLeds<WS2811, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
+    FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds1, NUM_LEDS);
+    FastLED.addLeds<WS2811, DATA_PIN_2, GBR>(leds2, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
     
     Serial.begin(230400);
@@ -250,9 +250,10 @@ void setup() {
 }
 
 void loop() {
-    // Handle serial communication
-    serial.readPacket();
-    serial.processPacket();
+    // Process all available packets immediately
+    while (serial.readPacket()) {
+        serial.processPacket();
+    }
     
     // Update animation
     unsigned long currentTime = millis();
