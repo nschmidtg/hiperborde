@@ -327,8 +327,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "int" ],
-					"patching_rect" : [ 1474.0, 1035.0, 39.0, 22.0 ],
-					"text" : "+ 100"
+					"patching_rect" : [ 1474.0, 1035.0, 32.0, 22.0 ],
+					"text" : "+ 50"
 				}
 
 			}
@@ -1164,8 +1164,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "int", "" ],
-					"patching_rect" : [ 169.5, 1244.0, 119.0, 22.0 ],
-					"text" : "serial c 115200 8 1 0"
+					"patching_rect" : [ 169.5, 1244.0, 120.0, 22.0 ],
+					"text" : "serial c 230400 8 1 0"
 				}
 
 			}

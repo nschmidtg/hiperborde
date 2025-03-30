@@ -2,9 +2,9 @@
 
 # Set variables
 # SKETCH_NAME="Simple/Simple.ino"  # Change this to your actual .ino file name
-SKETCH_NAME="LedStripIndependent/LedStripIndependent.ino"  # Change this to your actual .ino file name
+SKETCH_NAME="LedStripIndependentCursor/LedStripIndependentCursor.ino"  # Change this to your actual .ino file name
 BOARD_FQBN="arduino:avr:mega"  # Fully Qualified Board Name for Arduino Mega
-BAUD_RATE=460800               # Baud rate for serial communication
+BAUD_RATE=230400               # Baud rate for serial communication
 
 # Automatically detect the Arduino Mega port
 PORT=$(arduino-cli board list | grep "Arduino Mega" | awk '{print $1}')
