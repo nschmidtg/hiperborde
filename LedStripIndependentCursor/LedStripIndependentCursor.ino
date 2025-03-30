@@ -15,9 +15,9 @@
 
 // Animation Constants
 #define WAVE_SIZE 20
-#define PHASE_CONTEMPLATIVE 10000  // 10 seconds
-#define PHASE_WAIT 3000           // 3 seconds
-#define PHASE_CHAOS 5000          // 5 seconds
+#define PHASE_CONTEMPLATIVE 30000  // 10 seconds
+#define PHASE_WAIT 1000           // 3 seconds
+#define PHASE_CHAOS 3000          // 5 seconds
 #define FRAME_TIME 50             // 50ms between frames
 
 #define MAX_WAVES 5  // Maximum number of concurrent waves
@@ -242,7 +242,7 @@ void setup() {
     FastLED.addLeds<WS2811, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
     
-    Serial.begin(115200);
+    Serial.begin(230400);
     lcd.begin(16, 2);
     lcd.print("Hiperborde v2");
     
