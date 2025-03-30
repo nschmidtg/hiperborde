@@ -44,6 +44,11 @@ struct AnimationState {
     uint8_t currentPhase = 0;
 } state;
 
+CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
+    // Convert RGB to GBR
+    return CRGB(green, blue, red);
+}
+
 void addWave(Wave waves[]) {
     // Find first inactive wave slot
     for (int i = 0; i < MAX_WAVES; i++) {
@@ -137,8 +142,9 @@ struct SerialProtocol {
 } serial;
 
 void showContemplativeEffect() {
-    fill_solid(leds1, NUM_LEDS, CRGB::Black);
-    fill_solid(leds2, NUM_LEDS, CRGB::Black);
+    // Now we can specify colors in RGB format
+    fill_solid(leds1, NUM_LEDS, rgb(20, 10, 0));  // Warm orange background
+    fill_solid(leds2, NUM_LEDS, rgb(20, 10, 0));  
     
     // Start new waves when impulse is received
     if (state.start1) {
@@ -162,8 +168,8 @@ void showContemplativeEffect() {
                 float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0);
                 int brightness = state.height * (1.0 - positionFactor);
                 
-                // Blend with existing LED color if multiple waves overlap
-                CRGB newColor = CRGB(0, brightness, 0);
+                // Red wave using RGB format
+                CRGB newColor = rgb(0, 0, brightness);
                 leds[ledIndex] += newColor;
             }
             
@@ -181,8 +187,8 @@ void showContemplativeEffect() {
 }
 
 void showChaosEffect() {
-    fill_solid(leds1, NUM_LEDS, CRGB::Black);
-    fill_solid(leds2, NUM_LEDS, CRGB::Black);
+    fill_solid(leds1, NUM_LEDS, rgb(0, 0, 0));  // Black
+    fill_solid(leds2, NUM_LEDS, rgb(0, 0, 0));
     
     const int maxFlashWidth = 5;
     const int numFlashes = random(2, 6);
@@ -193,8 +199,8 @@ void showChaosEffect() {
         
         for (int j = 0; j < width; j++) {
             if (startPos + j < NUM_LEDS) {
-                leds1[startPos + j] = CRGB::White;
-                leds2[startPos + j] = CRGB::White;
+                leds1[startPos + j] = rgb(255, 255, 255);  // White
+                leds2[startPos + j] = rgb(255, 255, 255);
             }
         }
     }
