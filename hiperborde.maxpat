@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ -1907.0, -1353.0, 1839.0, 1319.0 ],
+		"rect" : [ -1907.0, -1353.0, 2492.0, 1319.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
 				"box" : 				{
@@ -92,30 +92,6 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 388.0, 1035.0, 29.5, 22.0 ],
 					"text" : "0"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-164",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 457.0, 1046.0, 29.5, 22.0 ],
-					"text" : "0"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-162",
-					"maxclass" : "number",
-					"numinlets" : 1,
-					"numoutlets" : 2,
-					"outlettype" : [ "", "bang" ],
-					"parameter_enable" : 0,
-					"patching_rect" : [ 457.0, 1089.0, 50.0, 22.0 ]
 				}
 
 			}
@@ -351,8 +327,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "int" ],
-					"patching_rect" : [ 1474.0, 1035.0, 32.0, 22.0 ],
-					"text" : "+ 30"
+					"patching_rect" : [ 1474.0, 1035.0, 39.0, 22.0 ],
+					"text" : "+ 100"
 				}
 
 			}
@@ -818,7 +794,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1742.0, 241.0, 184.0, 22.0 ],
-					"text" : "hourly::wave_period[1]] 11.6"
+					"text" : "hourly::wave_period[1]] 13.45"
 				}
 
 			}
@@ -1016,7 +992,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1131.0, 226.0, 184.0, 22.0 ],
-					"text" : "hourly::wave_height[1]] 1.58"
+					"text" : "hourly::wave_height[1]] 1.54"
 				}
 
 			}
@@ -1176,7 +1152,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 269.5, 1284.0, 126.0, 22.0 ],
+					"patching_rect" : [ 485.0, 1266.0, 126.0, 22.0 ],
 					"text" : "print status @popup 1"
 				}
 
@@ -1188,8 +1164,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "int", "" ],
-					"patching_rect" : [ 169.5, 1244.0, 120.0, 22.0 ],
-					"text" : "serial c 460800 8 1 0"
+					"patching_rect" : [ 169.5, 1244.0, 119.0, 22.0 ],
+					"text" : "serial c 115200 8 1 0"
 				}
 
 			}
@@ -1356,15 +1332,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-14", 5 ],
-					"order" : 1,
-					"source" : [ "obj-145", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-164", 0 ],
-					"order" : 0,
 					"source" : [ "obj-145", 0 ]
 				}
 
@@ -1401,13 +1368,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-68", 0 ],
 					"source" : [ "obj-16", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-162", 0 ],
-					"source" : [ "obj-164", 0 ]
 				}
 
 			}
@@ -1944,7 +1904,7 @@
 
 			}
  ],
-		"originid" : "pat-14",
+		"originid" : "pat-16",
 		"dependency_cache" : [ 			{
 				"name" : "meteo_parse.js",
 				"bootpath" : "~/hiperborde_code",
