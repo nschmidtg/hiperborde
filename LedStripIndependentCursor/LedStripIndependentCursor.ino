@@ -97,7 +97,8 @@ struct SerialProtocol {
     void processPacket() {
         if (!newDataAvailable) return;
         
-        state.height = buffer[1];
+        // Upscale height from 0-6 range to 0-255 range
+        state.height = map(buffer[1], 0, 6, 0, 255);
         state.speed = buffer[2];
         state.start1 = buffer[3];
         state.start2 = buffer[4];
@@ -122,8 +123,8 @@ void showContemplativeEffect() {
         float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0);
         int brightness = state.height * (1.0 - positionFactor);
         
-        if (state.start1) leds1[ledIndex] = CRGB(0, brightness, 0);
-        if (state.start2) leds2[ledIndex] = CRGB(0, brightness, 0);
+        if (state.start1) leds1[ledIndex] = CRGB(0, 255, 0);
+        if (state.start2) leds2[ledIndex] = CRGB(0, 255, 0);
     }
     
     FastLED.show();
