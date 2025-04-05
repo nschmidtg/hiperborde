@@ -14,7 +14,7 @@
 #define PACKET_SIZE 6
 
 // Animation Constants
-#define WAVE_SIZE 20
+#define WAVE_SIZE 33
 #define PHASE_CONTEMPLATIVE 50000  // 10 seconds
 #define PHASE_WAIT 1000           // 3 seconds
 #define PHASE_CHAOS 2000          // 5 seconds
