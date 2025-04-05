@@ -3,10 +3,10 @@
 #include <LiquidCrystal.h>
 
 // LED Configuration
-#define NUM_LEDS 100
+#define NUM_LEDS 200 // Number of LEDs per strip
 #define DATA_PIN_1 2
 #define DATA_PIN_2 3
-#define BRIGHTNESS 200
+#define BRIGHTNESS 100
 
 // Serial Protocol
 #define SYNC_BYTE 255
@@ -15,9 +15,9 @@
 
 // Animation Constants
 #define WAVE_SIZE 20
-#define PHASE_CONTEMPLATIVE 30000  // 10 seconds
+#define PHASE_CONTEMPLATIVE 50000  // 10 seconds
 #define PHASE_WAIT 1000           // 3 seconds
-#define PHASE_CHAOS 3000          // 5 seconds
+#define PHASE_CHAOS 2000          // 5 seconds
 #define FRAME_TIME 50             // 50ms between frames
 
 #define MAX_WAVES 10  // Maximum number of concurrent waves
@@ -141,10 +141,11 @@ struct SerialProtocol {
     }
 } serial;
 
+
 void showContemplativeEffect() {
     // Now we can specify colors in RGB format
-    fill_solid(leds1, NUM_LEDS, rgb(20, 10, 0));  // Warm orange background
-    fill_solid(leds2, NUM_LEDS, rgb(20, 10, 0));  
+    fill_solid(leds1, NUM_LEDS, rgb(10, 5, 0));  // Warm orange background
+    fill_solid(leds2, NUM_LEDS, rgb(10, 5, 0));  
     
     // Start new waves when impulse is received
     if (state.start1) {
@@ -164,24 +165,40 @@ void showContemplativeEffect() {
             
             // Show wave effect
             for (int j = 0; j < WAVE_SIZE; j++) {
-                int ledIndex = (waves[w].position - j + NUM_LEDS) % NUM_LEDS;
-                float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0);
-                int brightness = state.height * (1.0 - positionFactor);
+                int logicalIndex = waves[w].position - j;
+                if (logicalIndex < 0 || logicalIndex >= NUM_LEDS) continue;
                 
-                // Red wave using RGB format
-                CRGB newColor = rgb(0, 0, brightness);
-                leds[ledIndex] += newColor;
+                int ledIndex = logicalIndex;
+                float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0); // 0 at peak, 1 at edge
+                int brightness = state.height * (1.0 - positionFactor);
+            
+                // Define edge and peak colors
+                CRGB edgeColor = rgb(48, 102, 91);   // Ocean Green
+                CRGB peakColor = rgb(0, 42, 104);   // Ocean Blue
+            
+                // Interpolate between colors
+                CRGB color = blend(peakColor, edgeColor, positionFactor * 255); // 0=peak, 255=edge
+            
+                // Apply brightness scaling
+                color.nscale8_video(brightness);
+            
+                // Add the color to the current LED (accumulating effect)
+                leds[ledIndex] += color;
             }
             
             // Advance wave position
             waves[w].position++;
             
             // Deactivate wave when it completes a cycle
-            if (waves[w].position >= NUM_LEDS) {
+            if (waves[w].position - WAVE_SIZE >= NUM_LEDS) {
                 waves[w].active = false;
             }
         }
+            
     }
+
+
+
     
     FastLED.show();
 }
@@ -247,6 +264,9 @@ void setup() {
     FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds1, NUM_LEDS);
     FastLED.addLeds<WS2811, DATA_PIN_2, GBR>(leds2, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
+    fill_solid(leds1, NUM_LEDS, CRGB::Black);
+    fill_solid(leds2, NUM_LEDS, CRGB::Black);
+    FastLED.show();
     
     Serial.begin(230400);
     lcd.begin(16, 2);
