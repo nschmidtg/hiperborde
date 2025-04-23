@@ -165,34 +165,44 @@ void showContemplativeEffect() {
             float waveShape = 0;
             
             if (normalizedProgress < 0.5) {
-                // First half: wave builds up
+                // First half: wave builds up and peak moves from 0.75 to 0.5
                 float buildProgress = normalizedProgress * 2; // 0 to 1
-                float wavePosition = positionFactor * 2 * PI; // Convert to radians
                 
-                // Create a wave that starts flat and builds up
-                waveShape = sin(wavePosition) * buildProgress;
+                // Calculate peak position moving from 0.75 to 0.5
+                float peakPosition = 0.75 - (0.25 * buildProgress);
+                
+                // Calculate distance from current position to peak
+                float distanceFromPeak = abs(positionFactor - peakPosition);
+                
+                // Create wave shape based on distance from peak
+                waveShape = cos(distanceFromPeak * PI) * buildProgress;
                 
                 // Add a second harmonic for more natural look
-                waveShape += sin(wavePosition * 2) * 0.3 * buildProgress;
+                waveShape += cos(distanceFromPeak * 2 * PI) * 0.3 * buildProgress;
                 
                 // Ensure wave starts from 0
-                if (positionFactor < 0.5) {
-                    waveShape *= (positionFactor * 2);
+                if (positionFactor < peakPosition - 0.25) {
+                    waveShape *= (positionFactor / (peakPosition - 0.25));
                 }
             } else {
-                // Second half: wave tears down
+                // Second half: wave tears down and peak moves from 0.5 to 0.25
                 float tearProgress = (normalizedProgress - 0.5) * 2; // 0 to 1
-                float wavePosition = positionFactor * 2 * PI;
                 
-                // Create a wave that gradually flattens
-                waveShape = sin(wavePosition) * (1 - tearProgress);
+                // Calculate peak position moving from 0.5 to 0.25
+                float peakPosition = 0.5 - (0.25 * tearProgress);
+                
+                // Calculate distance from current position to peak
+                float distanceFromPeak = abs(positionFactor - peakPosition);
+                
+                // Create wave shape based on distance from peak
+                waveShape = cos(distanceFromPeak * PI) * (1 - tearProgress);
                 
                 // Add a second harmonic that fades faster
-                waveShape += sin(wavePosition * 2) * 0.3 * (1 - tearProgress * 1.5);
+                waveShape += cos(distanceFromPeak * 2 * PI) * 0.3 * (1 - tearProgress * 1.5);
                 
                 // Ensure wave ends at 0
-                if (positionFactor > 0.5) {
-                    waveShape *= (1 - (positionFactor - 0.5) * 2);
+                if (positionFactor > peakPosition + 0.25) {
+                    waveShape *= (1 - (positionFactor - (peakPosition + 0.25)) * 4);
                 }
             }
             
