@@ -14,6 +14,7 @@
 
 // Animation Constants
 #define WAVE_SIZE 33
+#define WAVE_DURATION 100  // Total number of LEDs for the wave to complete its evolution
 #define PHASE_CONTEMPLATIVE 50000  // 10 seconds
 #define PHASE_WAIT 1000           // 3 seconds
 #define PHASE_CHAOS 2000          // 5 seconds
@@ -66,7 +67,7 @@ void resetAnimation() {
     }
     
     state.currentPhase = 0;
-    state.phaseStartTime = millis();
+    state.phaseStartTime = millis(); 
     
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -92,7 +93,7 @@ struct SerialProtocol {
     bool newDataAvailable = false;
 
     bool readPacket() {
-        if (Serial.available() < PACKET_SIZE) return false;
+        if (Serial.available() < PACKET_SIZE) return false; 
         
         // Look for sync byte
         while (Serial.available() >= PACKET_SIZE) {
@@ -134,7 +135,6 @@ struct SerialProtocol {
 
 
 void showContemplativeEffect() {
-    // Now we can specify colors in RGB format
     fill_solid(leds1, NUM_LEDS, rgb(0, 0, 0));
     
     // Start new waves when impulse is received
@@ -143,12 +143,15 @@ void showContemplativeEffect() {
     }
     
     // Update and render all active waves
-    
     Wave* waves = state.waves1;
     CRGB* leds = leds1;
     
     for (int w = 0; w < MAX_WAVES; w++) {
         if (!waves[w].active) continue;
+        
+        // Calculate wave progress (0 to WAVE_DURATION)
+        int waveProgress = waves[w].position % WAVE_DURATION;
+        float normalizedProgress = (float)waveProgress / WAVE_DURATION; // 0 to 1
         
         // Show wave effect
         for (int j = 0; j < WAVE_SIZE; j++) {
@@ -156,19 +159,61 @@ void showContemplativeEffect() {
             if (logicalIndex < 0 || logicalIndex >= NUM_LEDS) continue;
             
             int ledIndex = logicalIndex;
-            float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0); // 0 at peak, 1 at edge
-            int brightness = state.height * (1.0 - positionFactor);
-        
+            float positionFactor = (float)j / WAVE_SIZE; // 0 at start, 1 at end of wave
+            
+            // Calculate wave shape using sine functions
+            float waveShape = 0;
+            
+            if (normalizedProgress < 0.5) {
+                // First half: wave builds up
+                float buildProgress = normalizedProgress * 2; // 0 to 1
+                float wavePosition = positionFactor * 2 * PI; // Convert to radians
+                
+                // Create a wave that starts flat and builds up
+                waveShape = sin(wavePosition) * buildProgress;
+                
+                // Add a second harmonic for more natural look
+                waveShape += sin(wavePosition * 2) * 0.3 * buildProgress;
+                
+                // Ensure wave starts from 0
+                if (positionFactor < 0.5) {
+                    waveShape *= (positionFactor * 2);
+                }
+            } else {
+                // Second half: wave tears down
+                float tearProgress = (normalizedProgress - 0.5) * 2; // 0 to 1
+                float wavePosition = positionFactor * 2 * PI;
+                
+                // Create a wave that gradually flattens
+                waveShape = sin(wavePosition) * (1 - tearProgress);
+                
+                // Add a second harmonic that fades faster
+                waveShape += sin(wavePosition * 2) * 0.3 * (1 - tearProgress * 1.5);
+                
+                // Ensure wave ends at 0
+                if (positionFactor > 0.5) {
+                    waveShape *= (1 - (positionFactor - 0.5) * 2);
+                }
+            }
+            
+            // Convert wave shape to brightness (0 to 1)
+            float brightnessFactor = (waveShape + 1) / 2; // Convert from -1..1 to 0..1
+            int brightness = state.height * brightnessFactor;
+            
+            // Add slight randomization to brightness for more natural look
+            brightness = max(0, min(255, brightness + random(-5, 5)));
+            
             // Define edge and peak colors
             CRGB edgeColor = rgb(48, 102, 91);   // Ocean Green
             CRGB peakColor = rgb(0, 42, 104);   // Ocean Blue
-        
-            // Interpolate between colors
-            CRGB color = blend(peakColor, edgeColor, positionFactor * 255); // 0=peak, 255=edge
-        
+            
+            // Interpolate between colors based on wave position
+            float colorBlend = abs(waveShape); // Use wave shape for color blending
+            CRGB color = blend(peakColor, edgeColor, colorBlend * 255);
+            
             // Apply brightness scaling
             color.nscale8_video(brightness);
-        
+            
             // Add the color to the current LED (accumulating effect)
             leds[ledIndex] += color;
         }
