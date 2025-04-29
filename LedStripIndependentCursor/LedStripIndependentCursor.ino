@@ -28,6 +28,7 @@ struct Wave {
 // Global Variables
 CRGB leds[NUM_LEDS];
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+unsigned long lastLCDUpdate = 0;
 
 struct AnimationState {
     uint8_t height = 0;
@@ -252,12 +253,15 @@ void updatePhase() {
 }
 
 void setup() {
+    delay(2000);  // Give USB time to stabilize
+    Serial.begin(230400);
+    while (!Serial);
+
     FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     FastLED.show();
     
-    Serial.begin(230400);
     lcd.begin(16, 2);
     lcd.print("Hiperborde v2");
     
@@ -268,6 +272,13 @@ void loop() {
     // Process all available packets immediately
     while (serial.readPacket()) {
         serial.processPacket();
+    }
+
+    // Show default LCD message if nothing arrives
+    if (millis() - lastLCDUpdate > 1000 && !serial.newDataAvailable) {
+        lcd.setCursor(0, 1);
+        lcd.print("Waiting...");
+        lastLCDUpdate = millis();
     }
     
     // Update animation
