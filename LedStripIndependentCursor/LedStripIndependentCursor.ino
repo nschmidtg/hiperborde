@@ -10,10 +10,9 @@
 // Serial Protocol
 #define SYNC_BYTE 255
 #define RESET_BYTE 254
-#define PACKET_SIZE 5 // sync_byte + height + speed + start + restart
+#define PACKET_SIZE 6 // sync_byte + height + width + speed + start + restart
 
 // Animation Constants
-#define WAVE_SIZE 33
 #define PHASE_CONTEMPLATIVE 50000  // 10 seconds
 #define PHASE_WAIT 1000           // 3 seconds
 #define PHASE_CHAOS 2000          // 5 seconds
@@ -23,6 +22,7 @@
 struct Wave {
     int position = 0;
     bool active = false;
+    int waveSize = 33;
 };
 
 // Global Variables
@@ -37,6 +37,7 @@ struct AnimationState {
     unsigned long phaseStartTime = 0;
     uint8_t currentPhase = 0;
     uint8_t frameTime = 50; // default 50ms
+    uint8_t waveSize = 33;
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
@@ -50,6 +51,7 @@ void addWave(Wave waves[]) {
         if (!waves[i].active) {
             waves[i].active = true;
             waves[i].position = 0;
+            waves[i].waveSize = state.waveSize;
             break;
         }
     }
@@ -79,11 +81,14 @@ void updateLCD() {
     lcd.setCursor(0, 0);
     lcd.print("H:");
     lcd.print(state.height);
+    lcd.setCursor(6, 0);
+    lcd.print("W:");
+    lcd.print(state.waveSize);
     lcd.setCursor(0, 1);
-    lcd.print("S1:");
+    lcd.print("S:");
     lcd.print(state.start);
-    lcd.setCursor(5, 1);
-    lcd.print("Fr:");
+    lcd.setCursor(6, 1);
+    lcd.print("F:");
     lcd.print(state.frameTime);
 }
 
@@ -113,10 +118,11 @@ struct SerialProtocol {
     bool validatePacket() {
         if (buffer[0] != SYNC_BYTE) return false;
         if (buffer[1] > 254) return false; // height must be 0-254
-        if (buffer[2] > 120) return false; // frame rate must be 15-120
-        if (buffer[2] < 15) return false; // frame rate must be 15-120
-        if (buffer[3] > 1) return false; // start must be 0 or 1
-        if (buffer[3] < 0) return false; // start must be 0 or 1
+        // if (buffer[2] < 5) return false; // width must be 5-40
+        // if (buffer[2] > 40) return false; // width must be 5-40
+        // if (buffer[3] > 120) return false; // frame rate must be 15-120
+        // if (buffer[3] < 15) return false; // frame rate must be 15-120
+        if (buffer[4] > 1) return false; // start must be 0 or 1
         return true;
     }
 
@@ -124,10 +130,11 @@ struct SerialProtocol {
         if (!newDataAvailable) return;
         
         state.height = buffer[1];
-        state.frameTime = buffer[2];
-        state.start = buffer[3];
+        state.waveSize = buffer[2];
+        state.frameTime = buffer[3];
+        state.start = buffer[4];
         
-        if (buffer[4] == RESET_BYTE) {
+        if (buffer[5] == RESET_BYTE) {
             resetAnimation();
         }
         
@@ -154,12 +161,12 @@ void showContemplativeEffect() {
         if (!waves[w].active) continue;
         
         // Show wave effect
-        for (int j = 0; j < WAVE_SIZE; j++) {
+        for (int j = 0; j < waves[w].waveSize; j++) {
             int logicalIndex = waves[w].position - j;
             if (logicalIndex < 0 || logicalIndex >= NUM_LEDS) continue;
             
             int ledIndex = logicalIndex;
-            float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0); // 0 at peak, 1 at edge
+            float positionFactor = abs((waves[w].waveSize / 2.0) - j) / (waves[w].waveSize / 2.0); // 0 at peak, 1 at edge
             int brightness = state.height * (1.0 - positionFactor);
         
             // Define edge and peak colors
@@ -180,7 +187,7 @@ void showContemplativeEffect() {
         waves[w].position++;
         
         // Deactivate wave when it completes a cycle
-        if (waves[w].position - WAVE_SIZE >= NUM_LEDS) {
+        if (waves[w].position - waves[w].waveSize >= NUM_LEDS) {
             waves[w].active = false;
         }
     }
