@@ -3,22 +3,20 @@
 #include <LiquidCrystal.h>
 
 // LED Configuration
-#define NUM_LEDS 200 // Number of LEDs per strip
+#define NUM_LEDS 100 // Number of LEDs per strip
 #define DATA_PIN_1 2
-#define DATA_PIN_2 3
-#define BRIGHTNESS 100
+#define BRIGHTNESS 255
 
 // Serial Protocol
 #define SYNC_BYTE 255
 #define RESET_BYTE 254
-#define PACKET_SIZE 6
+#define PACKET_SIZE 5 // sync_byte + height + speed + start + restart
 
 // Animation Constants
 #define WAVE_SIZE 33
 #define PHASE_CONTEMPLATIVE 50000  // 10 seconds
 #define PHASE_WAIT 1000           // 3 seconds
 #define PHASE_CHAOS 2000          // 5 seconds
-#define FRAME_TIME 50             // 50ms between frames
 
 #define MAX_WAVES 10  // Maximum number of concurrent waves
 
@@ -28,20 +26,17 @@ struct Wave {
 };
 
 // Global Variables
-CRGB leds1[NUM_LEDS];
-CRGB leds2[NUM_LEDS];
+CRGB leds[NUM_LEDS];
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 struct AnimationState {
     uint8_t height = 0;
-    uint8_t speed = 0;
-    bool start1 = false;
-    bool start2 = false;
-    Wave waves1[MAX_WAVES];  // Waves for strip 1
-    Wave waves2[MAX_WAVES];  // Waves for strip 2
+    bool start = false;
+    Wave waves[MAX_WAVES];
     unsigned long lastFrameTime = 0;
     unsigned long phaseStartTime = 0;
     uint8_t currentPhase = 0;
+    uint8_t frameTime = 50; // default 50ms
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
@@ -61,23 +56,22 @@ void addWave(Wave waves[]) {
 }
 
 void resetAnimation() {
-    fill_solid(leds1, NUM_LEDS, CRGB::Black);
-    fill_solid(leds2, NUM_LEDS, CRGB::Black);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Reset");
+    delay(100);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
     FastLED.show();
     
     // Reset all waves
     for (int i = 0; i < MAX_WAVES; i++) {
-        state.waves1[i].active = false;
-        state.waves2[i].active = false;
+        state.waves[i].active = false;
     }
     
     state.currentPhase = 0;
     state.phaseStartTime = millis();
     
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Reset");
-    delay(100);
+
 }
 
 void updateLCD() {
@@ -85,13 +79,12 @@ void updateLCD() {
     lcd.setCursor(0, 0);
     lcd.print("H:");
     lcd.print(state.height);
-    lcd.print(" S:");
-    lcd.print(state.speed);
     lcd.setCursor(0, 1);
     lcd.print("S1:");
-    lcd.print(state.start1);
-    lcd.print(" S2:");
-    lcd.print(state.start2);
+    lcd.print(state.start);
+    lcd.setCursor(5, 1);
+    lcd.print("Fr:");
+    lcd.print(state.frameTime);
 }
 
 // Serial Communication
@@ -119,20 +112,22 @@ struct SerialProtocol {
 
     bool validatePacket() {
         if (buffer[0] != SYNC_BYTE) return false;
-        if (buffer[3] > 1 || buffer[4] > 1) return false; // start1/start2 must be 0 or 1
+        if (buffer[1] > 254) return false; // height must be 0-254
+        if (buffer[2] > 120) return false; // frame rate must be 15-120
+        if (buffer[2] < 15) return false; // frame rate must be 15-120
+        if (buffer[3] > 1) return false; // start must be 0 or 1
+        if (buffer[3] < 0) return false; // start must be 0 or 1
         return true;
     }
 
     void processPacket() {
         if (!newDataAvailable) return;
         
-        // Upscale height from 0-6 range to 0-255 range
-        state.height = map(buffer[1], 0, 6, 0, 255);
-        state.speed = buffer[2];
-        state.start1 = buffer[3];
-        state.start2 = buffer[4];
+        state.height = buffer[1];
+        state.frameTime = buffer[2];
+        state.start = buffer[3];
         
-        if (buffer[5] == RESET_BYTE) {
+        if (buffer[4] == RESET_BYTE) {
             resetAnimation();
         }
         
@@ -144,68 +139,58 @@ struct SerialProtocol {
 
 void showContemplativeEffect() {
     // Now we can specify colors in RGB format
-    fill_solid(leds1, NUM_LEDS, rgb(10, 5, 0));  // Warm orange background
-    fill_solid(leds2, NUM_LEDS, rgb(10, 5, 0));  
+    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));  // Warm orange background: rgb(10, 5, 0)
     
     // Start new waves when impulse is received
-    if (state.start1) {
-        addWave(state.waves1);
-    }
-    if (state.start2) {
-        addWave(state.waves2);
+    if (state.start) {
+        addWave(state.waves);
     }
     
     // Update and render all active waves
-    for (int strip = 0; strip < 2; strip++) {
-        Wave* waves = (strip == 0) ? state.waves1 : state.waves2;
-        CRGB* leds = (strip == 0) ? leds1 : leds2;
+
+    Wave* waves = state.waves;
+    
+    for (int w = 0; w < MAX_WAVES; w++) {
+        if (!waves[w].active) continue;
         
-        for (int w = 0; w < MAX_WAVES; w++) {
-            if (!waves[w].active) continue;
+        // Show wave effect
+        for (int j = 0; j < WAVE_SIZE; j++) {
+            int logicalIndex = waves[w].position - j;
+            if (logicalIndex < 0 || logicalIndex >= NUM_LEDS) continue;
             
-            // Show wave effect
-            for (int j = 0; j < WAVE_SIZE; j++) {
-                int logicalIndex = waves[w].position - j;
-                if (logicalIndex < 0 || logicalIndex >= NUM_LEDS) continue;
-                
-                int ledIndex = logicalIndex;
-                float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0); // 0 at peak, 1 at edge
-                int brightness = state.height * (1.0 - positionFactor);
-            
-                // Define edge and peak colors
-                CRGB edgeColor = rgb(48, 102, 91);   // Ocean Green
-                CRGB peakColor = rgb(0, 42, 104);   // Ocean Blue
-            
-                // Interpolate between colors
-                CRGB color = blend(peakColor, edgeColor, positionFactor * 255); // 0=peak, 255=edge
-            
-                // Apply brightness scaling
-                color.nscale8_video(brightness);
-            
-                // Add the color to the current LED (accumulating effect)
-                leds[ledIndex] += color;
-            }
-            
-            // Advance wave position
-            waves[w].position++;
-            
-            // Deactivate wave when it completes a cycle
-            if (waves[w].position - WAVE_SIZE >= NUM_LEDS) {
-                waves[w].active = false;
-            }
+            int ledIndex = logicalIndex;
+            float positionFactor = abs((WAVE_SIZE / 2.0) - j) / (WAVE_SIZE / 2.0); // 0 at peak, 1 at edge
+            int brightness = state.height * (1.0 - positionFactor);
+        
+            // Define edge and peak colors
+            CRGB edgeColor = rgb(48, 102, 91);   // Ocean Green
+            CRGB peakColor = rgb(0, 42, 104);   // Ocean Blue
+        
+            // Interpolate between colors
+            CRGB color = blend(peakColor, edgeColor, positionFactor * 255); // 0=peak, 255=edge
+        
+            // Apply brightness scaling
+            color.nscale8_video(brightness);
+        
+            // Add the color to the current LED (accumulating effect)
+            leds[ledIndex] += color;
         }
-            
+        
+        // Advance wave position
+        waves[w].position++;
+        
+        // Deactivate wave when it completes a cycle
+        if (waves[w].position - WAVE_SIZE >= NUM_LEDS) {
+            waves[w].active = false;
+        }
     }
-
-
-
+        
     
     FastLED.show();
 }
 
 void showChaosEffect() {
-    fill_solid(leds1, NUM_LEDS, rgb(0, 0, 0));  // Black
-    fill_solid(leds2, NUM_LEDS, rgb(0, 0, 0));
+    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));  // Black
     
     const int maxFlashWidth = 5;
     const int numFlashes = random(2, 6);
@@ -216,8 +201,7 @@ void showChaosEffect() {
         
         for (int j = 0; j < width; j++) {
             if (startPos + j < NUM_LEDS) {
-                leds1[startPos + j] = rgb(255, 255, 255);  // White
-                leds2[startPos + j] = rgb(255, 255, 255);
+                leds[startPos + j] = rgb(255, 255, 255);  // White
             }
         }
     }
@@ -261,11 +245,9 @@ void updatePhase() {
 }
 
 void setup() {
-    FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds1, NUM_LEDS);
-    FastLED.addLeds<WS2811, DATA_PIN_2, GBR>(leds2, NUM_LEDS);
+    FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
-    fill_solid(leds1, NUM_LEDS, CRGB::Black);
-    fill_solid(leds2, NUM_LEDS, CRGB::Black);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
     FastLED.show();
     
     Serial.begin(230400);
@@ -283,7 +265,7 @@ void loop() {
     
     // Update animation
     unsigned long currentTime = millis();
-    if (currentTime - state.lastFrameTime >= FRAME_TIME) {
+    if (currentTime - state.lastFrameTime >= state.frameTime) {
         updatePhase();
         
         switch (state.currentPhase) {
@@ -292,8 +274,7 @@ void loop() {
                 break;
             case 1:
             case 3:
-                fill_solid(leds1, NUM_LEDS, CRGB::Black);
-                fill_solid(leds2, NUM_LEDS, CRGB::Black);
+                fill_solid(leds, NUM_LEDS, CRGB::Black);
                 FastLED.show();
                 break;
             case 2:
