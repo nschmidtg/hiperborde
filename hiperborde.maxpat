@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ -1907.0, -1353.0, 2016.0, 1319.0 ],
+		"rect" : [ 34.0, 100.0, 1660.0, 933.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
 				"box" : 				{
@@ -453,7 +453,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1273.0, 1008.0, 111.0, 22.0 ],
-					"text" : "255 125 33 50 0 0"
+					"text" : "255 82 34 48 0 0"
 				}
 
 			}
@@ -873,7 +873,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1595.0, 202.0, 149.0, 35.0 ],
-					"text" : "get hourly::wave_period[1]]"
+					"text" : "get hourly::wave_period[23]]"
 				}
 
 			}
@@ -966,7 +966,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1378.0, 187.0, 149.0, 35.0 ],
-					"text" : "get hourly::wave_height[1]]"
+					"text" : "get hourly::wave_height[23]]"
 				}
 
 			}
@@ -1904,7 +1904,7 @@
 
 			}
  ],
-		"originid" : "pat-14",
+		"originid" : "pat-6",
 		"dependency_cache" : [ 			{
 				"name" : "meteo_parse.js",
 				"bootpath" : "~/hiperborde_code",
