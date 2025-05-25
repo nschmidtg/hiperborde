@@ -186,7 +186,7 @@ struct SerialProtocol {
 
 void showContemplativeEffect() {
     // Now we can specify colors in RGB format
-    fill_solid(leds, NUM_LEDS, rgb(10, 5, 0));  // Warm orange background: rgb(10, 5, 0)
+    fill_solid(leds, NUM_LEDS, rgb(2, 1, 0));  // Warm orange background: rgb(10, 5, 0)
     
     // Start new waves when impulse is received
     if (state.start) {
@@ -305,7 +305,7 @@ void showBreathingEffect() {
         
         // Calculate section brightness with breathing effect
         float breathingFactor = (sin(millis() / 1000.0 * section.speed) + 1.0) / 2.0;
-        float sectionBrightness = breathingFactor * overallBrightness * 255;
+        float sectionBrightness = breathingFactor * overallBrightness * 50;
         
         // Render section
         for (int j = 0; j < section.width; j++) {
