@@ -42,7 +42,7 @@ struct BreathingSection {
     int width;
     float brightness;
     float speed;
-    bool direction;
+    float phase;  // Add phase offset for each section
 };
 
 // Global Variables
@@ -257,13 +257,15 @@ void showChaosEffect() {
 }
 
 void initializeBreathingEffect() {
-    // Initialize breathing sections with random positions and properties
+    // Initialize breathing sections with fixed positions and properties
+    int totalWidth = 0;
     for (int i = 0; i < BREATHING_SECTIONS; i++) {
-        state.breathingSections[i].position = random(NUM_LEDS);
-        state.breathingSections[i].width = random(5, 15);
+        state.breathingSections[i].position = totalWidth;
+        state.breathingSections[i].width = NUM_LEDS / BREATHING_SECTIONS;  // Equal width sections
         state.breathingSections[i].brightness = 0;
-        state.breathingSections[i].speed = random(25, 75) / 100.0;
-        state.breathingSections[i].direction = random(2) == 1;
+        state.breathingSections[i].speed;// = 0.2;  // Slower, smoother breathing
+        state.breathingSections[i].phase = (i * PI) / 2;  // Stagger the phases
+        totalWidth += state.breathingSections[i].width;
     }
     state.phaseStartTime = millis();
 }
@@ -290,31 +292,23 @@ void showBreathingEffect() {
     for (int i = 0; i < BREATHING_SECTIONS; i++) {
         BreathingSection& section = state.breathingSections[i];
         
-        // Update section position
-        if (section.direction) {
-            section.position += section.speed;
-            if (section.position >= NUM_LEDS) {
-                section.position = 0;
-            }
-        } else {
-            section.position -= section.speed;
-            if (section.position < 0) {
-                section.position = NUM_LEDS - 1;
-            }
-        }
-        
-        // Calculate section brightness with breathing effect
-        float breathingFactor = (sin(millis() / 1000.0 * section.speed) + 1.0) / 2.0;
+        // Calculate section brightness with smooth breathing effect
+        float breathingFactor = (sin((millis() / 1000.0 * section.speed) + section.phase) + 1.0) / 2.0;
         float sectionBrightness = breathingFactor * overallBrightness * 50;
         
-        // Render section
-        for (int j = 0; j < section.width; j++) {
-            int ledIndex = (section.position + j) % NUM_LEDS;
-            leds[ledIndex] = rgb(
-                sectionBrightness * 0.8,  // Red component (orange)
-                sectionBrightness * 0.4,  // Green component (orange)
-                0                         // No blue
-            );
+        // Only render if brightness is above threshold
+        if (sectionBrightness > 2) {  // Minimum brightness threshold
+            // Render section
+            for (int j = 0; j < section.width; j++) {
+                int ledIndex = section.position + j;
+                if (ledIndex >= NUM_LEDS) continue;
+                
+                leds[ledIndex] = rgb(
+                    sectionBrightness * 0.6,  // Reduced red component
+                    sectionBrightness * 0.5,  // Increased green component
+                    0                         // No blue
+                );
+            }
         }
     }
     
