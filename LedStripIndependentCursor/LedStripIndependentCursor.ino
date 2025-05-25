@@ -9,21 +9,40 @@
 
 // Serial Protocol
 #define SYNC_BYTE 255
-#define RESET_BYTE 252
-#define PEAK_BYTE 253
-#define BREAK_BYTE 254
+#define RESET_BYTE 249
+#define SILENCE_1_BYTE 250
+#define PEAK_BYTE 251
+#define SILENCE_2_BYTE 252
+#define BREAK_BYTE 253
+#define SILENCE_3_BYTE 254
 #define PACKET_SIZE 6 // sync_byte + height + width + speed + start + phase
 
 // Animation Constants
 #define PHASE_CONTEMPLATIVE 0
 #define PHASE_WAIT 1
 #define PHASE_CHAOS 2
+#define PHASE_BREATHING 3
 #define MAX_WAVES 10  // Maximum number of concurrent waves
+
+// Breathing effect constants
+#define BREATHING_SECTIONS 5
+#define BREATHING_FADE_IN_TIME 5000  // 5 seconds
+#define BREATHING_FULL_TIME 10000    // 10 seconds
+#define BREATHING_FADE_OUT_TIME 5000 // 5 seconds
+#define BREATHING_TOTAL_TIME (BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME + BREATHING_FADE_OUT_TIME)
 
 struct Wave {
     int position = 0;
     bool active = false;
     int waveSize = 33;
+};
+
+struct BreathingSection {
+    int position;
+    int width;
+    float brightness;
+    float speed;
+    bool direction;
 };
 
 // Global Variables
@@ -40,6 +59,7 @@ struct AnimationState {
     uint8_t currentPhase = 0;
     uint8_t frameTime = 50; // default 50ms
     uint8_t waveSize = 33;
+    BreathingSection breathingSections[BREATHING_SECTIONS];
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
@@ -139,11 +159,21 @@ struct SerialProtocol {
                 state.currentPhase = PHASE_CONTEMPLATIVE;
                 resetAnimation();
                 break;
+            case SILENCE_1_BYTE:
+                state.currentPhase = PHASE_WAIT;
+                break;
             case PEAK_BYTE:
+                state.currentPhase = PHASE_CHAOS;
+                break;
+            case SILENCE_2_BYTE:
                 state.currentPhase = PHASE_WAIT;
                 break;
             case BREAK_BYTE:
-                state.currentPhase = PHASE_CHAOS;
+                state.currentPhase = PHASE_BREATHING;
+                initializeBreathingEffect();
+                break;
+            case SILENCE_3_BYTE:
+                state.currentPhase = PHASE_WAIT;
                 break;
             // If buffer[5] is 0 or any other value, don't change phase
         }
@@ -226,6 +256,71 @@ void showChaosEffect() {
     FastLED.show();
 }
 
+void initializeBreathingEffect() {
+    // Initialize breathing sections with random positions and properties
+    for (int i = 0; i < BREATHING_SECTIONS; i++) {
+        state.breathingSections[i].position = random(NUM_LEDS);
+        state.breathingSections[i].width = random(5, 15);
+        state.breathingSections[i].brightness = 0;
+        state.breathingSections[i].speed = random(25, 75) / 100.0;
+        state.breathingSections[i].direction = random(2) == 1;
+    }
+    state.phaseStartTime = millis();
+}
+
+void showBreathingEffect() {
+    unsigned long currentTime = millis();
+    unsigned long elapsedTime = currentTime - state.phaseStartTime;
+    
+    // Calculate overall phase
+    float fadeInProgress = constrain((float)elapsedTime / BREATHING_FADE_IN_TIME, 0, 1);
+    float fadeOutProgress = constrain((float)(elapsedTime - (BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME)) / BREATHING_FADE_OUT_TIME, 0, 1);
+    float overallBrightness = 1.0;
+    
+    if (elapsedTime < BREATHING_FADE_IN_TIME) {
+        overallBrightness = fadeInProgress;
+    } else if (elapsedTime > BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME) {
+        overallBrightness = 1.0 - fadeOutProgress;
+    }
+    
+    // Clear all LEDs
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    
+    // Update and render breathing sections
+    for (int i = 0; i < BREATHING_SECTIONS; i++) {
+        BreathingSection& section = state.breathingSections[i];
+        
+        // Update section position
+        if (section.direction) {
+            section.position += section.speed;
+            if (section.position >= NUM_LEDS) {
+                section.position = 0;
+            }
+        } else {
+            section.position -= section.speed;
+            if (section.position < 0) {
+                section.position = NUM_LEDS - 1;
+            }
+        }
+        
+        // Calculate section brightness with breathing effect
+        float breathingFactor = (sin(millis() / 1000.0 * section.speed) + 1.0) / 2.0;
+        float sectionBrightness = breathingFactor * overallBrightness * 255;
+        
+        // Render section
+        for (int j = 0; j < section.width; j++) {
+            int ledIndex = (section.position + j) % NUM_LEDS;
+            leds[ledIndex] = rgb(
+                sectionBrightness * 0.8,  // Red component (orange)
+                sectionBrightness * 0.4,  // Green component (orange)
+                0                         // No blue
+            );
+        }
+    }
+    
+    FastLED.show();
+}
+
 void updatePhase() {
     // Phase changes are now handled in processPacket()
     // This function is kept for compatibility but doesn't do anything
@@ -273,6 +368,9 @@ void loop() {
                 break;
             case PHASE_CHAOS:
                 showChaosEffect();
+                break;
+            case PHASE_BREATHING:
+                showBreathingEffect();
                 break;
         }
         
