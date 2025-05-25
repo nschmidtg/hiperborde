@@ -20,7 +20,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 231.0, 702.0, 29.5, 22.0 ],
-					"text" : "50"
+					"text" : "15"
 				}
 
 			}
@@ -1325,7 +1325,7 @@
 
 							}
  ],
-						"originid" : "pat-26"
+						"originid" : "pat-30"
 					}
 ,
 					"patching_rect" : [ 107.0, 367.0, 79.0, 22.0 ],
@@ -1585,7 +1585,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1262.0, 1218.0, 130.0, 22.0 ],
-					"text" : "255 73 15 15 0 0"
+					"text" : "255 73 15 15 1 0"
 				}
 
 			}
@@ -3281,7 +3281,7 @@
 
 			}
  ],
-		"originid" : "pat-24",
+		"originid" : "pat-28",
 		"dependency_cache" : [ 			{
 				"name" : "meteo_parse.js",
 				"bootpath" : "~/hiperborde_code",
