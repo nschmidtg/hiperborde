@@ -14,6 +14,28 @@
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-62",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 1533.0, 958.0, 150.0, 20.0 ],
+					"text" : "new wave"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-60",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 1802.0, 901.0, 150.0, 20.0 ],
+					"text" : "increcendo, peak, break"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-58",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -428,7 +450,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 1902.0, 905.0, 29.5, 22.0 ],
+					"patching_rect" : [ 1765.0, 905.0, 29.5, 22.0 ],
 					"text" : "254"
 				}
 
@@ -440,7 +462,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 1758.0, 905.0, 29.5, 22.0 ],
+					"patching_rect" : [ 1722.5, 905.0, 29.5, 22.0 ],
 					"text" : "253"
 				}
 
@@ -1220,7 +1242,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1262.0, 1218.0, 130.0, 22.0 ],
-					"text" : "255 122 21 78 0 0"
+					"text" : "255 122 21 79 0 0"
 				}
 
 			}

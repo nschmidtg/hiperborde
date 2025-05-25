@@ -9,7 +9,9 @@
 
 // Serial Protocol
 #define SYNC_BYTE 255
-#define RESET_BYTE 254
+#define RESET_BYTE 252
+#define PEAK_BYTE 253
+#define BREAK_BYTE 254
 #define PACKET_SIZE 6 // sync_byte + height + width + speed + start + restart
 
 // Animation Constants
