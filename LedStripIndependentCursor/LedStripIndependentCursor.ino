@@ -5,20 +5,25 @@
 // LED Configuration
 #define NUM_LEDS 100 // Number of LEDs per strip
 #define DATA_PIN_1 2
-#define BRIGHTNESS 255
+#define DEFAULT_BRIGHTNESS 127
+
+// LCD Button pins
+#define BUTTON_UP 8
+#define BUTTON_DOWN 9
+#define BUTTON_LEFT 4
+#define BUTTON_RIGHT 5
 
 // Serial Protocol
 #define SYNC_BYTE 255
 #define RESET_BYTE 252
 #define PEAK_BYTE 253
 #define BREAK_BYTE 254
-#define PACKET_SIZE 6 // sync_byte + height + width + speed + start + restart
+#define PACKET_SIZE 6 // sync_byte + height + width + speed + start + phase
 
 // Animation Constants
-#define PHASE_CONTEMPLATIVE 50000  // 10 seconds
-#define PHASE_WAIT 1000           // 3 seconds
-#define PHASE_CHAOS 2000          // 5 seconds
-
+#define PHASE_CONTEMPLATIVE 0
+#define PHASE_WAIT 1
+#define PHASE_CHAOS 2
 #define MAX_WAVES 10  // Maximum number of concurrent waves
 
 struct Wave {
@@ -41,6 +46,7 @@ struct AnimationState {
     uint8_t currentPhase = 0;
     uint8_t frameTime = 50; // default 50ms
     uint8_t waveSize = 33;
+    uint8_t maxBrightness = DEFAULT_BRIGHTNESS;  // Current max brightness
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
@@ -73,10 +79,34 @@ void resetAnimation() {
         state.waves[i].active = false;
     }
     
-    state.currentPhase = 0;
-    state.phaseStartTime = millis();
-    
+    state.currentPhase = PHASE_CONTEMPLATIVE;
+}
 
+// Function to scale a color by the current max brightness
+CRGB scaleColor(CRGB color, uint8_t brightness) {
+    // First scale by the input brightness (0-255)
+    color.nscale8_video(brightness);
+    // Then scale by the max brightness
+    color.nscale8_video(state.maxBrightness);
+    return color;
+}
+
+void handleButtons() {
+    static unsigned long lastButtonPress = 0;
+    const unsigned long debounceTime = 200; // 200ms debounce
+    
+    if (millis() - lastButtonPress < debounceTime) return;
+    
+    if (digitalRead(BUTTON_UP) == LOW) {
+        state.maxBrightness = min(255, state.maxBrightness + 5);
+        lastButtonPress = millis();
+        updateLCD();
+    }
+    else if (digitalRead(BUTTON_DOWN) == LOW) {
+        state.maxBrightness = max(0, state.maxBrightness - 5);
+        lastButtonPress = millis();
+        updateLCD();
+    }
 }
 
 void updateLCD() {
@@ -91,6 +121,9 @@ void updateLCD() {
     lcd.print("S:");
     lcd.print(state.start);
     lcd.setCursor(6, 1);
+    lcd.print("B:");
+    lcd.print(state.maxBrightness);
+    lcd.setCursor(10, 1);
     lcd.print("F:");
     lcd.print(state.frameTime);
 }
@@ -137,8 +170,19 @@ struct SerialProtocol {
         state.frameTime = buffer[3];
         state.start = buffer[4];
         
-        if (buffer[5] == RESET_BYTE) {
-            resetAnimation();
+        // Handle phase changes based on buffer[5]
+        switch (buffer[5]) {
+            case RESET_BYTE:
+                state.currentPhase = PHASE_CONTEMPLATIVE;
+                resetAnimation();
+                break;
+            case PEAK_BYTE:
+                state.currentPhase = PHASE_WAIT;
+                break;
+            case BREAK_BYTE:
+                state.currentPhase = PHASE_CHAOS;
+                break;
+            // If buffer[5] is 0 or any other value, don't change phase
         }
         
         updateLCD();
@@ -146,61 +190,47 @@ struct SerialProtocol {
     }
 } serial;
 
-
 void showContemplativeEffect() {
-    // Now we can specify colors in RGB format
-    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));  // Warm orange background: rgb(10, 5, 0)
+    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));
     
-    // Start new waves when impulse is received
     if (state.start) {
         addWave(state.waves);
     }
     
-    // Update and render all active waves
-
     Wave* waves = state.waves;
     
     for (int w = 0; w < MAX_WAVES; w++) {
         if (!waves[w].active) continue;
         
-        // Show wave effect
         for (int j = 0; j < waves[w].waveSize; j++) {
             int logicalIndex = waves[w].position - j;
             if (logicalIndex < 0 || logicalIndex >= NUM_LEDS) continue;
             
             int ledIndex = logicalIndex;
-            float positionFactor = abs((waves[w].waveSize / 2.0) - j) / (waves[w].waveSize / 2.0); // 0 at peak, 1 at edge
+            float positionFactor = abs((waves[w].waveSize / 2.0) - j) / (waves[w].waveSize / 2.0);
             int brightness = state.height * (1.0 - positionFactor);
-        
-            // Define edge and peak colors
-            CRGB edgeColor = rgb(48, 102, 91);   // Ocean Green
-            CRGB peakColor = rgb(0, 42, 104);   // Ocean Blue
-        
-            // Interpolate between colors
-            CRGB color = blend(peakColor, edgeColor, positionFactor * 255); // 0=peak, 255=edge
-        
-            // Apply brightness scaling
-            color.nscale8_video(brightness);
-        
-            // Add the color to the current LED (accumulating effect)
+            
+            CRGB edgeColor = rgb(48, 102, 91);
+            CRGB peakColor = rgb(0, 42, 104);
+            
+            CRGB color = blend(peakColor, edgeColor, positionFactor * 255);
+            color = scaleColor(color, brightness);
+            
             leds[ledIndex] += color;
         }
         
-        // Advance wave position
         waves[w].position++;
         
-        // Deactivate wave when it completes a cycle
         if (waves[w].position - waves[w].waveSize >= NUM_LEDS) {
             waves[w].active = false;
         }
     }
-        
     
     FastLED.show();
 }
 
 void showChaosEffect() {
-    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));  // Black
+    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));
     
     const int maxFlashWidth = 5;
     const int numFlashes = random(2, 6);
@@ -209,9 +239,18 @@ void showChaosEffect() {
         int startPos = random(NUM_LEDS - maxFlashWidth);
         int width = random(1, maxFlashWidth + 1);
         
+        // Calculate brightness based on width for more dynamic effect
+        int baseBrightness = map(width, 1, maxFlashWidth, 200, 255);
+        
         for (int j = 0; j < width; j++) {
             if (startPos + j < NUM_LEDS) {
-                leds[startPos + j] = rgb(255, 255, 255);  // White
+                // Add some variation to brightness within each flash
+                int brightness = baseBrightness + random(-20, 20);
+                brightness = constrain(brightness, 0, 255);
+                
+                CRGB color = rgb(255, 255, 255);
+                color = scaleColor(color, brightness);
+                leds[startPos + j] = color;
             }
         }
     }
@@ -220,38 +259,8 @@ void showChaosEffect() {
 }
 
 void updatePhase() {
-    unsigned long currentTime = millis();
-    unsigned long phaseElapsed = currentTime - state.phaseStartTime;
-    
-    switch (state.currentPhase) {
-        case 0: // Contemplative
-            if (phaseElapsed >= PHASE_CONTEMPLATIVE) {
-                state.currentPhase = 1;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-            
-        case 1: // Wait
-            if (phaseElapsed >= PHASE_WAIT) {
-                state.currentPhase = 2;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-            
-        case 2: // Chaos
-            if (phaseElapsed >= PHASE_CHAOS) {
-                state.currentPhase = 3;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-            
-        case 3: // Wait
-            if (phaseElapsed >= PHASE_WAIT) {
-                state.currentPhase = 0;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-    }
+    // Phase changes are now handled in processPacket()
+    // This function is kept for compatibility but doesn't do anything
 }
 
 void setup() {
@@ -259,8 +268,14 @@ void setup() {
     Serial.begin(230400);
     while (!Serial);
 
+    // Setup button pins
+    pinMode(BUTTON_UP, INPUT_PULLUP);
+    pinMode(BUTTON_DOWN, INPUT_PULLUP);
+    pinMode(BUTTON_LEFT, INPUT_PULLUP);
+    pinMode(BUTTON_RIGHT, INPUT_PULLUP);
+
     FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds, NUM_LEDS);
-    FastLED.setBrightness(BRIGHTNESS);
+    FastLED.setBrightness(255); // Set to max, we'll control brightness in software
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     FastLED.show();
     
@@ -276,6 +291,9 @@ void loop() {
         serial.processPacket();
     }
 
+    // Handle button presses
+    handleButtons();
+
     // Show default LCD message if nothing arrives
     if (millis() - lastLCDUpdate > 1000 && !serial.newDataAvailable) {
         lcd.setCursor(0, 1);
@@ -286,18 +304,15 @@ void loop() {
     // Update animation
     unsigned long currentTime = millis();
     if (currentTime - state.lastFrameTime >= state.frameTime) {
-        updatePhase();
-        
         switch (state.currentPhase) {
-            case 0:
+            case PHASE_CONTEMPLATIVE:
                 showContemplativeEffect();
                 break;
-            case 1:
-            case 3:
+            case PHASE_WAIT:
                 fill_solid(leds, NUM_LEDS, CRGB::Black);
                 FastLED.show();
                 break;
-            case 2:
+            case PHASE_CHAOS:
                 showChaosEffect();
                 break;
         }
