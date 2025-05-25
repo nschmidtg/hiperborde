@@ -12,13 +12,12 @@
 #define RESET_BYTE 252
 #define PEAK_BYTE 253
 #define BREAK_BYTE 254
-#define PACKET_SIZE 6 // sync_byte + height + width + speed + start + restart
+#define PACKET_SIZE 6 // sync_byte + height + width + speed + start + phase
 
 // Animation Constants
-#define PHASE_CONTEMPLATIVE 50000  // 10 seconds
-#define PHASE_WAIT 1000           // 3 seconds
-#define PHASE_CHAOS 2000          // 5 seconds
-
+#define PHASE_CONTEMPLATIVE 0
+#define PHASE_WAIT 1
+#define PHASE_CHAOS 2
 #define MAX_WAVES 10  // Maximum number of concurrent waves
 
 struct Wave {
@@ -73,10 +72,7 @@ void resetAnimation() {
         state.waves[i].active = false;
     }
     
-    state.currentPhase = 0;
-    state.phaseStartTime = millis();
-    
-
+    state.currentPhase = PHASE_CONTEMPLATIVE;
 }
 
 void updateLCD() {
@@ -137,8 +133,19 @@ struct SerialProtocol {
         state.frameTime = buffer[3];
         state.start = buffer[4];
         
-        if (buffer[5] == RESET_BYTE) {
-            resetAnimation();
+        // Handle phase changes based on buffer[5]
+        switch (buffer[5]) {
+            case RESET_BYTE:
+                state.currentPhase = PHASE_CONTEMPLATIVE;
+                resetAnimation();
+                break;
+            case PEAK_BYTE:
+                state.currentPhase = PHASE_WAIT;
+                break;
+            case BREAK_BYTE:
+                state.currentPhase = PHASE_CHAOS;
+                break;
+            // If buffer[5] is 0 or any other value, don't change phase
         }
         
         updateLCD();
@@ -149,7 +156,7 @@ struct SerialProtocol {
 
 void showContemplativeEffect() {
     // Now we can specify colors in RGB format
-    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));  // Warm orange background: rgb(10, 5, 0)
+    fill_solid(leds, NUM_LEDS, rgb(10, 5, 0));  // Warm orange background: rgb(10, 5, 0)
     
     // Start new waves when impulse is received
     if (state.start) {
@@ -220,38 +227,8 @@ void showChaosEffect() {
 }
 
 void updatePhase() {
-    unsigned long currentTime = millis();
-    unsigned long phaseElapsed = currentTime - state.phaseStartTime;
-    
-    switch (state.currentPhase) {
-        case 0: // Contemplative
-            if (phaseElapsed >= PHASE_CONTEMPLATIVE) {
-                state.currentPhase = 1;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-            
-        case 1: // Wait
-            if (phaseElapsed >= PHASE_WAIT) {
-                state.currentPhase = 2;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-            
-        case 2: // Chaos
-            if (phaseElapsed >= PHASE_CHAOS) {
-                state.currentPhase = 3;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-            
-        case 3: // Wait
-            if (phaseElapsed >= PHASE_WAIT) {
-                state.currentPhase = 0;
-                state.phaseStartTime = currentTime;
-            }
-            break;
-    }
+    // Phase changes are now handled in processPacket()
+    // This function is kept for compatibility but doesn't do anything
 }
 
 void setup() {
@@ -286,18 +263,15 @@ void loop() {
     // Update animation
     unsigned long currentTime = millis();
     if (currentTime - state.lastFrameTime >= state.frameTime) {
-        updatePhase();
-        
         switch (state.currentPhase) {
-            case 0:
+            case PHASE_CONTEMPLATIVE:
                 showContemplativeEffect();
                 break;
-            case 1:
-            case 3:
+            case PHASE_WAIT:
                 fill_solid(leds, NUM_LEDS, CRGB::Black);
                 FastLED.show();
                 break;
-            case 2:
+            case PHASE_CHAOS:
                 showChaosEffect();
                 break;
         }
