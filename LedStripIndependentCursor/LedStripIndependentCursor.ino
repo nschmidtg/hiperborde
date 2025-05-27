@@ -5,7 +5,8 @@
 // LED Configuration
 #define NUM_LEDS 100 // Number of LEDs per strip
 #define DATA_PIN_1 2
-#define BRIGHTNESS 255
+#define MAX_BRIGHTNESS 255  // Maximum brightness value
+#define BRIGHTNESS_STEP 5   // How much to change brightness per button press
 
 // Serial Protocol
 #define SYNC_BYTE 255
@@ -30,6 +31,17 @@
 #define BREATHING_FULL_TIME 10000    // 10 seconds
 #define BREATHING_FADE_OUT_TIME 5000 // 5 seconds
 #define BREATHING_TOTAL_TIME (BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME + BREATHING_FADE_OUT_TIME)
+
+// Definiciones de botones
+#define btnRIGHT  0
+#define btnUP     1
+#define btnDOWN   2
+#define btnLEFT   3
+#define btnSELECT 4
+#define btnNONE   5
+
+int lcd_key     = 0;
+int adc_key_in  = 0;
 
 struct Wave {
     int position = 0;
@@ -60,12 +72,30 @@ struct AnimationState {
     uint8_t frameTime = 50; // default 50ms
     uint8_t waveSize = 33;
     BreathingSection breathingSections[BREATHING_SECTIONS];
+    uint8_t globalBrightness = MAX_BRIGHTNESS;  // Add global brightness control
+    int lastButtonState = btnNONE;  // Track last button state
+    unsigned long lastButtonPressTime = 0;  // Track last button press time
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
     // Convert RGB to GBR
     return CRGB(green, blue, red);
 }
+
+
+int read_LCD_buttons() {
+  adc_key_in = analogRead(0);  // Lee A0
+
+  // Asignamos rangos con tolerancia
+  if (adc_key_in < 50)   return btnRIGHT;   // 0
+  if (adc_key_in < 150)  return btnUP;      // 99
+  if (adc_key_in < 350)  return btnDOWN;    // 256
+  if (adc_key_in < 500)  return btnLEFT;    // 408
+  if (adc_key_in < 700)  return btnSELECT;  // 639
+
+  return btnNONE;         // 1023 (ningún botón presionado)
+}
+
 
 void addWave(Wave waves[]) {
     // Find first inactive wave slot
@@ -186,7 +216,7 @@ struct SerialProtocol {
 
 void showContemplativeEffect() {
     // Now we can specify colors in RGB format
-    fill_solid(leds, NUM_LEDS, rgb(2, 1, 0));  // Warm orange background: rgb(10, 5, 0)
+    fill_solid(leds, NUM_LEDS, rgb(10, 5, 0));  // Warm orange background: rgb(10, 5, 0)
     
     // Start new waves when impulse is received
     if (state.start) {
@@ -194,7 +224,6 @@ void showContemplativeEffect() {
     }
     
     // Update and render all active waves
-
     Wave* waves = state.waves;
     
     for (int w = 0; w < MAX_WAVES; w++) {
@@ -208,6 +237,7 @@ void showContemplativeEffect() {
             int ledIndex = logicalIndex;
             float positionFactor = abs((waves[w].waveSize / 2.0) - j) / (waves[w].waveSize / 2.0); // 0 at peak, 1 at edge
             int brightness = state.height * (1.0 - positionFactor);
+            brightness = (brightness * state.globalBrightness) / MAX_BRIGHTNESS;  // Scale brightness
         
             // Define edge and peak colors
             CRGB edgeColor = rgb(48, 102, 91);   // Ocean Green
@@ -231,7 +261,6 @@ void showContemplativeEffect() {
             waves[w].active = false;
         }
     }
-        
     
     FastLED.show();
 }
@@ -248,7 +277,9 @@ void showChaosEffect() {
         
         for (int j = 0; j < width; j++) {
             if (startPos + j < NUM_LEDS) {
-                leds[startPos + j] = rgb(255, 255, 255);  // White
+                // Scale white brightness by global brightness
+                uint8_t scaledBrightness = (255 * state.globalBrightness) / MAX_BRIGHTNESS;
+                leds[startPos + j] = rgb(scaledBrightness, scaledBrightness, scaledBrightness);
             }
         }
     }
@@ -296,6 +327,9 @@ void showBreathingEffect() {
         float breathingFactor = (sin((millis() / 1000.0 * section.speed) + section.phase) + 1.0) / 2.0;
         float sectionBrightness = breathingFactor * overallBrightness * 50;
         
+        // Scale brightness by global brightness
+        sectionBrightness = (sectionBrightness * state.globalBrightness) / MAX_BRIGHTNESS;
+        
         // Only render if brightness is above threshold
         if (sectionBrightness > 2) {  // Minimum brightness threshold
             // Render section
@@ -315,10 +349,6 @@ void showBreathingEffect() {
     FastLED.show();
 }
 
-void updatePhase() {
-    // Phase changes are now handled in processPacket()
-    // This function is kept for compatibility but doesn't do anything
-}
 
 void setup() {
     delay(2000);  // Give USB time to stabilize
@@ -326,7 +356,7 @@ void setup() {
     while (!Serial);
 
     FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds, NUM_LEDS);
-    FastLED.setBrightness(BRIGHTNESS);
+    FastLED.setBrightness(MAX_BRIGHTNESS);
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     FastLED.show();
     
@@ -336,7 +366,39 @@ void setup() {
     state.phaseStartTime = millis();
 }
 
+void handleButtonPressed(int lcd_key) {
+    unsigned long currentTime = millis();
+    
+    // Only process button if it's different from last state or enough time has passed
+    if (lcd_key != state.lastButtonState || (currentTime - state.lastButtonPressTime) > 300) {
+        if (lcd_key == btnUP) {
+            // Increase brightness
+            if (state.globalBrightness < MAX_BRIGHTNESS) {
+                state.globalBrightness = min(state.globalBrightness + BRIGHTNESS_STEP, MAX_BRIGHTNESS);
+                state.lastButtonPressTime = currentTime;
+            }
+        } else if (lcd_key == btnDOWN) {
+            // Decrease brightness
+            if (state.globalBrightness > 0) {
+                state.globalBrightness = max(state.globalBrightness - BRIGHTNESS_STEP, 0);
+                state.lastButtonPressTime = currentTime;
+            }
+        }
+        
+        // Update LCD with current brightness
+        lcd.setCursor(0, 1);
+        lcd.print("Bright: ");
+        lcd.print(state.globalBrightness);
+        lcd.print("   ");
+        
+        state.lastButtonState = lcd_key;
+    }
+}
+
 void loop() {
+    lcd_key = read_LCD_buttons();
+    
+
     // Process all available packets immediately
     while (serial.readPacket()) {
         serial.processPacket();
@@ -352,6 +414,7 @@ void loop() {
     // Update animation
     unsigned long currentTime = millis();
     if (currentTime - state.lastFrameTime >= state.frameTime) {
+        handleButtonPressed(lcd_key);
         switch (state.currentPhase) {
             case PHASE_CONTEMPLATIVE:
                 showContemplativeEffect();
