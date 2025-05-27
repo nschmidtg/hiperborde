@@ -28,9 +28,9 @@
 
 // Breathing effect constants
 #define BREATHING_SECTIONS 5
-#define BREATHING_FADE_IN_TIME 5000  // 5 seconds
-#define BREATHING_FULL_TIME 10000    // 10 seconds
-#define BREATHING_FADE_OUT_TIME 5000 // 5 seconds
+#define BREATHING_FADE_IN_TIME 4000
+#define BREATHING_FULL_TIME 8000
+#define BREATHING_FADE_OUT_TIME 4000
 #define BREATHING_TOTAL_TIME (BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME + BREATHING_FADE_OUT_TIME)
 
 // Definiciones de botones
@@ -279,9 +279,7 @@ void showChaosEffect() {
         
         for (int j = 0; j < width; j++) {
             if (startPos + j < NUM_LEDS) {
-                // Scale white brightness by global brightness
-                uint8_t scaledBrightness = (255 * state.globalBrightness) / MAX_BRIGHTNESS;
-                leds[startPos + j] = rgb(scaledBrightness, scaledBrightness, scaledBrightness);
+                leds[startPos + j] = rgb(255, 255, 255);
             }
         }
     }
