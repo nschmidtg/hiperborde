@@ -70,6 +70,7 @@ struct AnimationState {
     unsigned long lastFrameTime = 0;
     unsigned long phaseStartTime = 0;
     uint8_t currentPhase = 0;
+    uint8_t previousPhase = 0;  // Add tracking of previous phase
     uint8_t frameTime = 50; // default 50ms
     uint8_t waveSize = 33;
     BreathingSection breathingSections[BREATHING_SECTIONS];
@@ -111,14 +112,6 @@ void addWave(Wave waves[]) {
 }
 
 void resetAnimation() {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Reset");
-    delay(100);
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
-    FastLED.show();
-    
-    // Reset all waves
     for (int i = 0; i < MAX_WAVES; i++) {
         state.waves[i].active = false;
     }
@@ -184,11 +177,13 @@ struct SerialProtocol {
         state.frameTime = buffer[3];
         state.start = buffer[4];
         
+        // Store current phase before potential change
+        state.previousPhase = state.currentPhase;
+        
         // Handle phase changes based on buffer[5]
         switch (buffer[5]) {
             case RESET_BYTE:
                 state.currentPhase = PHASE_CONTEMPLATIVE;
-                resetAnimation();
                 break;
             case SILENCE_1_BYTE:
                 state.currentPhase = PHASE_WAIT;
@@ -201,12 +196,23 @@ struct SerialProtocol {
                 break;
             case BREAK_BYTE:
                 state.currentPhase = PHASE_BREATHING;
-                initializeBreathingEffect();
                 break;
             case SILENCE_3_BYTE:
                 state.currentPhase = PHASE_WAIT;
                 break;
             // If buffer[5] is 0 or any other value, don't change phase
+        }
+        
+        // Only initialize effects if phase actually changed
+        if (state.previousPhase != state.currentPhase) {
+            switch (state.currentPhase) {
+                case PHASE_CONTEMPLATIVE:
+                    resetAnimation();
+                    break;
+                case PHASE_BREATHING:
+                    initializeBreathingEffect();
+                    break;
+            }
         }
         
         updateLCD();

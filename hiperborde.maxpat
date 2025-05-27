@@ -1670,7 +1670,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1262.0, 1218.0, 130.0, 22.0 ],
-					"text" : "255 152 19 120 0 0"
+					"text" : "255 153 19 15 0 250"
 				}
 
 			}
@@ -2054,7 +2054,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1603.0, 412.0, 149.0, 35.0 ],
-					"text" : "get hourly::wave_period[21]"
+					"text" : "get hourly::wave_period[22]"
 				}
 
 			}
@@ -2146,7 +2146,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1386.0, 397.0, 159.0, 22.0 ],
-					"text" : "get hourly::wave_height[21]"
+					"text" : "get hourly::wave_height[22]"
 				}
 
 			}
@@ -3225,13 +3225,6 @@
 					"destination" : [ "obj-95", 0 ],
 					"order" : 1,
 					"source" : [ "obj-75", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-79", 0 ],
-					"source" : [ "obj-77", 0 ]
 				}
 
 			}
