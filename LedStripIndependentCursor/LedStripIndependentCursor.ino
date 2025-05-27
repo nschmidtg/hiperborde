@@ -77,6 +77,9 @@ struct AnimationState {
     uint8_t globalBrightness = INITIAL_BRIGHTNESS;  // Add global brightness control
     int lastButtonState = btnNONE;  // Track last button state
     unsigned long lastButtonPressTime = 0;  // Track last button press time
+    uint8_t breathingState = 0;  // Current target state
+    uint8_t currentBrightness = 0;  // Current actual brightness
+    unsigned long lastBreathingUpdate = 0;  // Time of last brightness update
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
@@ -294,64 +297,61 @@ void showChaosEffect() {
 }
 
 void initializeBreathingEffect() {
-    // Initialize breathing sections with fixed positions and properties
-    int totalWidth = 0;
-    for (int i = 0; i < BREATHING_SECTIONS; i++) {
-        state.breathingSections[i].position = totalWidth;
-        state.breathingSections[i].width = NUM_LEDS / BREATHING_SECTIONS;  // Equal width sections
-        state.breathingSections[i].brightness = 0;
-        state.breathingSections[i].speed;// = 0.2;  // Slower, smoother breathing
-        state.breathingSections[i].phase = (i * PI) / 2;  // Stagger the phases
-        totalWidth += state.breathingSections[i].width;
-    }
-    state.phaseStartTime = millis();
+    state.breathingState = 0;
+    state.currentBrightness = 0;
+    state.lastBreathingUpdate = millis();
 }
 
 void showBreathingEffect() {
-    unsigned long currentTime = millis();
-    unsigned long elapsedTime = currentTime - state.phaseStartTime;
-    
-    // Calculate overall phase
-    float fadeInProgress = constrain((float)elapsedTime / BREATHING_FADE_IN_TIME, 0, 1);
-    float fadeOutProgress = constrain((float)(elapsedTime - (BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME)) / BREATHING_FADE_OUT_TIME, 0, 1);
-    float overallBrightness = 1.0;
-    
-    if (elapsedTime < BREATHING_FADE_IN_TIME) {
-        overallBrightness = fadeInProgress;
-    } else if (elapsedTime > BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME) {
-        overallBrightness = 1.0 - fadeOutProgress;
-    }
-    
     // Clear all LEDs
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     
-    // Update and render breathing sections
-    for (int i = 0; i < BREATHING_SECTIONS; i++) {
-        BreathingSection& section = state.breathingSections[i];
-        
-        // Calculate section brightness with smooth breathing effect
-        float breathingFactor = (sin((millis() / 1000.0 * section.speed) + section.phase) + 1.0) / 2.0;
-        float sectionBrightness = breathingFactor * overallBrightness * 50;
-        
-        // Scale brightness by global brightness
-        sectionBrightness = (sectionBrightness * state.globalBrightness) / MAX_BRIGHTNESS;
-        
-        // Only render if brightness is above threshold
-        if (sectionBrightness > 2) {  // Minimum brightness threshold
-            // Render section
-            for (int j = 0; j < section.width; j++) {
-                int ledIndex = section.position + j;
-                if (ledIndex >= NUM_LEDS) continue;
-                
-                leds[ledIndex] = rgb(
-                    sectionBrightness * 0.6,  // Reduced red component
-                    sectionBrightness * 0.5,  // Increased green component
-                    0                         // No blue
-                );
-            }
-        }
+    unsigned long currentTime = millis();
+    unsigned long elapsed = currentTime - state.lastBreathingUpdate;
+    
+    // Get target brightness for current state
+    uint8_t targetBrightness;
+    switch (state.breathingState) {
+        case 0:  // Start at 0
+            targetBrightness = 0;
+            break;
+        case 1:  // Full brightness
+            targetBrightness = state.globalBrightness;
+            break;
+        case 2:  // Half brightness
+            targetBrightness = state.globalBrightness / 2;
+            break;
+        case 3:  // Full brightness again
+            targetBrightness = state.globalBrightness;
+            break;
+        case 4:  // Half brightness again
+            targetBrightness = state.globalBrightness / 2;
+            break;
     }
     
+    // Smoothly interpolate between current and target brightness
+    const unsigned long TRANSITION_TIME = 500; // 500ms for each transition
+    if (elapsed < TRANSITION_TIME) {
+        // Calculate interpolation factor (0.0 to 1.0)
+        float factor = (float)elapsed / TRANSITION_TIME;
+        // Interpolate between current and target brightness
+        state.currentBrightness = state.currentBrightness + (targetBrightness - state.currentBrightness) * factor;
+    } else {
+        // We've reached the target brightness
+        state.currentBrightness = targetBrightness;
+        // Move to next state
+        state.breathingState = (state.breathingState + 1) % 5;
+        state.lastBreathingUpdate = currentTime;
+    }
+    
+    // Set all LEDs to the same color with interpolated brightness
+    CRGB color = rgb(
+        state.currentBrightness * 0.6,  // Reduced red component
+        state.currentBrightness * 0.5,  // Increased green component
+        0                               // No blue
+    );
+    
+    fill_solid(leds, NUM_LEDS, color);
     FastLED.show();
 }
 
