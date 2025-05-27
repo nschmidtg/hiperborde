@@ -6,6 +6,7 @@
 #define NUM_LEDS 100 // Number of LEDs per strip
 #define DATA_PIN_1 2
 #define MAX_BRIGHTNESS 255  // Maximum brightness value
+#define INITIAL_BRIGHTNESS 100
 #define BRIGHTNESS_STEP 5   // How much to change brightness per button press
 
 // Serial Protocol
@@ -72,7 +73,7 @@ struct AnimationState {
     uint8_t frameTime = 50; // default 50ms
     uint8_t waveSize = 33;
     BreathingSection breathingSections[BREATHING_SECTIONS];
-    uint8_t globalBrightness = MAX_BRIGHTNESS;  // Add global brightness control
+    uint8_t globalBrightness = INITIAL_BRIGHTNESS;  // Add global brightness control
     int lastButtonState = btnNONE;  // Track last button state
     unsigned long lastButtonPressTime = 0;  // Track last button press time
 } state;
@@ -215,8 +216,10 @@ struct SerialProtocol {
 
 
 void showContemplativeEffect() {
-    // Now we can specify colors in RGB format
-    fill_solid(leds, NUM_LEDS, rgb(10, 5, 0));  // Warm orange background: rgb(10, 5, 0)
+    // Scale background color by global brightness
+    uint8_t bgRed = (255 * state.globalBrightness) / MAX_BRIGHTNESS;
+    uint8_t bgGreen = (127 * state.globalBrightness) / MAX_BRIGHTNESS;
+    fill_solid(leds, NUM_LEDS, rgb(bgRed, bgGreen, 0));  // Warm orange background
     
     // Start new waves when impulse is received
     if (state.start) {
@@ -236,8 +239,7 @@ void showContemplativeEffect() {
             
             int ledIndex = logicalIndex;
             float positionFactor = abs((waves[w].waveSize / 2.0) - j) / (waves[w].waveSize / 2.0); // 0 at peak, 1 at edge
-            int brightness = state.height * (1.0 - positionFactor);
-            brightness = (brightness * state.globalBrightness) / MAX_BRIGHTNESS;  // Scale brightness
+            int brightness = state.height * (1.0 - positionFactor);  // Use raw height from serial
         
             // Define edge and peak colors
             CRGB edgeColor = rgb(48, 102, 91);   // Ocean Green
@@ -397,7 +399,7 @@ void handleButtonPressed(int lcd_key) {
 
 void loop() {
     lcd_key = read_LCD_buttons();
-    
+    handleButtonPressed(lcd_key);  // Handle buttons independently of animation timing
 
     // Process all available packets immediately
     while (serial.readPacket()) {
@@ -414,7 +416,6 @@ void loop() {
     // Update animation
     unsigned long currentTime = millis();
     if (currentTime - state.lastFrameTime >= state.frameTime) {
-        handleButtonPressed(lcd_key);
         switch (state.currentPhase) {
             case PHASE_CONTEMPLATIVE:
                 showContemplativeEffect();
