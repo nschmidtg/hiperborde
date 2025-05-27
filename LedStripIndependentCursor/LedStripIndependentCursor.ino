@@ -6,7 +6,7 @@
 #define NUM_LEDS 100 // Number of LEDs per strip
 #define DATA_PIN_1 2
 #define MAX_BRIGHTNESS 255  // Maximum brightness value
-#define INITIAL_BRIGHTNESS 100
+#define INITIAL_BRIGHTNESS 60
 #define BRIGHTNESS_STEP 5   // How much to change brightness per button press
 
 // Serial Protocol
@@ -24,14 +24,12 @@
 #define PHASE_WAIT 1
 #define PHASE_CHAOS 2
 #define PHASE_BREATHING 3
-#define MAX_WAVES 10  // Maximum number of concurrent waves
+#define PHASE_FADE_OUT 4
+#define MAX_WAVES 10
 
 // Breathing effect constants
-#define BREATHING_SECTIONS 5
-#define BREATHING_FADE_IN_TIME 4000
-#define BREATHING_FULL_TIME 8000
-#define BREATHING_FADE_OUT_TIME 4000
-#define BREATHING_TOTAL_TIME (BREATHING_FADE_IN_TIME + BREATHING_FULL_TIME + BREATHING_FADE_OUT_TIME)
+#define BREATHING_TRANSITION_TIME 3000
+#define FADE_OUT_TIME 5000  // 5 seconds fade out time
 
 // Definiciones de botones
 #define btnRIGHT  0
@@ -50,14 +48,6 @@ struct Wave {
     int waveSize = 33;
 };
 
-struct BreathingSection {
-    int position;
-    int width;
-    float brightness;
-    float speed;
-    float phase;  // Add phase offset for each section
-};
-
 // Global Variables
 CRGB leds[NUM_LEDS];
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
@@ -70,16 +60,16 @@ struct AnimationState {
     unsigned long lastFrameTime = 0;
     unsigned long phaseStartTime = 0;
     uint8_t currentPhase = 0;
-    uint8_t previousPhase = 0;  // Add tracking of previous phase
+    uint8_t previousPhase = 0;
     uint8_t frameTime = 50; // default 50ms
     uint8_t waveSize = 33;
-    BreathingSection breathingSections[BREATHING_SECTIONS];
-    uint8_t globalBrightness = INITIAL_BRIGHTNESS;  // Add global brightness control
-    int lastButtonState = btnNONE;  // Track last button state
-    unsigned long lastButtonPressTime = 0;  // Track last button press time
-    uint8_t breathingState = 0;  // Current target state
-    uint8_t currentBrightness = 0;  // Current actual brightness
-    unsigned long lastBreathingUpdate = 0;  // Time of last brightness update
+    uint8_t globalBrightness = INITIAL_BRIGHTNESS;
+    int lastButtonState = btnNONE;
+    unsigned long lastButtonPressTime = 0;
+    uint8_t breathingState = 0;
+    uint8_t currentBrightness = 0;
+    unsigned long lastBreathingUpdate = 0;
+    CRGB previousLeds[NUM_LEDS];
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
@@ -201,9 +191,8 @@ struct SerialProtocol {
                 state.currentPhase = PHASE_BREATHING;
                 break;
             case SILENCE_3_BYTE:
-                state.currentPhase = PHASE_WAIT;
+                state.currentPhase = PHASE_FADE_OUT;  // Changed to fade out
                 break;
-            // If buffer[5] is 0 or any other value, don't change phase
         }
         
         // Only initialize effects if phase actually changed
@@ -214,6 +203,9 @@ struct SerialProtocol {
                     break;
                 case PHASE_BREATHING:
                     initializeBreathingEffect();
+                    break;
+                case PHASE_FADE_OUT:
+                    initializeFadeOut();
                     break;
             }
         }
@@ -319,7 +311,7 @@ void showBreathingEffect() {
             targetBrightness = state.globalBrightness;
             break;
         case 2:  // Half brightness
-            targetBrightness = state.globalBrightness / 2;
+            targetBrightness = state.globalBrightness / 4;
             break;
         case 3:  // Full brightness again
             targetBrightness = state.globalBrightness;
@@ -327,20 +319,22 @@ void showBreathingEffect() {
         case 4:  // Half brightness again
             targetBrightness = state.globalBrightness / 2;
             break;
+        case 5:  // Full brightness again
+            targetBrightness = state.globalBrightness;
+            break;
     }
     
-    // Smoothly interpolate between current and target brightness
-    const unsigned long TRANSITION_TIME = 500; // 500ms for each transition
-    if (elapsed < TRANSITION_TIME) {
+    
+    if (elapsed < BREATHING_TRANSITION_TIME) {
         // Calculate interpolation factor (0.0 to 1.0)
-        float factor = (float)elapsed / TRANSITION_TIME;
+        float factor = (float)elapsed / BREATHING_TRANSITION_TIME;
         // Interpolate between current and target brightness
         state.currentBrightness = state.currentBrightness + (targetBrightness - state.currentBrightness) * factor;
     } else {
         // We've reached the target brightness
         state.currentBrightness = targetBrightness;
         // Move to next state
-        state.breathingState = (state.breathingState + 1) % 5;
+        state.breathingState = (state.breathingState + 1) % 6;
         state.lastBreathingUpdate = currentTime;
     }
     
@@ -355,6 +349,34 @@ void showBreathingEffect() {
     FastLED.show();
 }
 
+void initializeFadeOut() {
+    // Store current LED state before starting fade out
+    for (int i = 0; i < NUM_LEDS; i++) {
+        state.previousLeds[i] = leds[i];
+    }
+    state.phaseStartTime = millis();
+}
+
+void showFadeOutEffect() {
+    unsigned long currentTime = millis();
+    unsigned long elapsed = currentTime - state.phaseStartTime;
+    
+    if (elapsed < FADE_OUT_TIME) {
+        // Calculate fade factor (1.0 to 0.0)
+        float fadeFactor = 1.0 - ((float)elapsed / FADE_OUT_TIME);
+        
+        // Apply fade to all LEDs
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i] = state.previousLeds[i];
+            leds[i].nscale8_video(fadeFactor * 255);  // Scale brightness by fade factor
+        }
+    } else {
+        // Fade complete, set all LEDs to black
+        fill_solid(leds, NUM_LEDS, CRGB::Black);
+    }
+    
+    FastLED.show();
+}
 
 void setup() {
     delay(2000);  // Give USB time to stabilize
@@ -433,6 +455,9 @@ void loop() {
                 break;
             case PHASE_BREATHING:
                 showBreathingEffect();
+                break;
+            case PHASE_FADE_OUT:
+                showFadeOutEffect();
                 break;
         }
         

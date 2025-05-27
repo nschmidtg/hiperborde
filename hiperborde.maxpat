@@ -10,9 +10,21 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ -2165.0, -1353.0, 2016.0, 1319.0 ],
+		"rect" : [ 34.0, 100.0, 1660.0, 933.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-76",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 93.0, 718.0, 29.5, 22.0 ],
+					"text" : "1"
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"id" : "obj-98",
 					"maxclass" : "message",
@@ -32,7 +44,6 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 196.25, 997.0, 99.0, 22.0 ],
-					"presentation_linecount" : 2,
 					"text" : "open audio2.wav"
 				}
 
@@ -614,42 +625,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-95",
-					"maxclass" : "button",
-					"numinlets" : 1,
-					"numoutlets" : 1,
-					"outlettype" : [ "bang" ],
-					"parameter_enable" : 0,
-					"patching_rect" : [ 1656.0, 932.0, 24.0, 24.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-79",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 1662.75, 1029.0, 29.5, 22.0 ],
-					"text" : "0"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-77",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 1681.0, 990.0, 61.0, 22.0 ],
-					"text" : "delay 600"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-56",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -789,7 +764,6 @@
 						"classnamespace" : "box",
 						"rect" : [ 664.0, 129.0, 1000.0, 780.0 ],
 						"gridsize" : [ 15.0, 15.0 ],
-						"visible" : 1,
 						"boxes" : [ 							{
 								"box" : 								{
 									"id" : "obj-16",
@@ -834,7 +808,7 @@
 									"numoutlets" : 1,
 									"outlettype" : [ "bang" ],
 									"patching_rect" : [ 748.0, 252.0, 67.0, 22.0 ],
-									"text" : "delay 5000"
+									"text" : "delay 8000"
 								}
 
 							}
@@ -1410,7 +1384,7 @@
 
 							}
  ],
-						"originid" : "pat-8"
+						"originid" : "pat-322"
 					}
 ,
 					"patching_rect" : [ 107.0, 367.0, 79.0, 22.0 ],
@@ -1670,7 +1644,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1262.0, 1218.0, 130.0, 22.0 ],
-					"text" : "255 153 19 15 0 250"
+					"text" : "255 156 19 120 0 251"
 				}
 
 			}
@@ -1837,7 +1811,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1441.0, 842.0, 29.5, 22.0 ],
-					"text" : "500"
+					"text" : "200"
 				}
 
 			}
@@ -2054,7 +2028,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1603.0, 412.0, 149.0, 35.0 ],
-					"text" : "get hourly::wave_period[22]"
+					"text" : "get hourly::wave_period[23]"
 				}
 
 			}
@@ -2146,7 +2120,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1386.0, 397.0, 159.0, 22.0 ],
-					"text" : "get hourly::wave_height[22]"
+					"text" : "get hourly::wave_height[23]"
 				}
 
 			}
@@ -2328,7 +2302,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-93", 0 ],
+					"destination" : [ "obj-76", 0 ],
 					"order" : 1,
 					"source" : [ "obj-10", 0 ]
 				}
@@ -2550,15 +2524,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-145", 0 ],
-					"order" : 0,
-					"source" : [ "obj-143", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-95", 0 ],
-					"order" : 1,
 					"source" : [ "obj-143", 0 ]
 				}
 
@@ -2652,6 +2617,15 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-4", 0 ],
+					"order" : 0,
+					"source" : [ "obj-2", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-86", 0 ],
+					"order" : 1,
 					"source" : [ "obj-2", 0 ]
 				}
 
@@ -2940,15 +2914,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-145", 0 ],
-					"order" : 0,
-					"source" : [ "obj-54", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-95", 0 ],
-					"order" : 1,
 					"source" : [ "obj-54", 0 ]
 				}
 
@@ -2963,15 +2928,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-145", 0 ],
-					"order" : 0,
-					"source" : [ "obj-56", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-95", 0 ],
-					"order" : 1,
 					"source" : [ "obj-56", 0 ]
 				}
 
@@ -2979,15 +2935,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-145", 0 ],
-					"order" : 0,
-					"source" : [ "obj-57", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-95", 0 ],
-					"order" : 1,
 					"source" : [ "obj-57", 0 ]
 				}
 
@@ -3199,15 +3146,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-145", 0 ],
-					"order" : 0,
-					"source" : [ "obj-74", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-95", 0 ],
-					"order" : 1,
 					"source" : [ "obj-74", 0 ]
 				}
 
@@ -3215,16 +3153,14 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-145", 0 ],
-					"order" : 0,
 					"source" : [ "obj-75", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-95", 0 ],
-					"order" : 1,
-					"source" : [ "obj-75", 0 ]
+					"destination" : [ "obj-93", 0 ],
+					"source" : [ "obj-76", 0 ]
 				}
 
 			}
@@ -3241,13 +3177,6 @@
 					"destination" : [ "obj-23", 0 ],
 					"order" : 1,
 					"source" : [ "obj-78", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-145", 0 ],
-					"source" : [ "obj-79", 0 ]
 				}
 
 			}
@@ -3443,13 +3372,6 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-77", 0 ],
-					"source" : [ "obj-95", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-106", 0 ],
 					"order" : 2,
 					"source" : [ "obj-96", 0 ]
@@ -3487,7 +3409,7 @@
 
 			}
  ],
-		"originid" : "pat-6",
+		"originid" : "pat-320",
 		"dependency_cache" : [ 			{
 				"name" : "meteo_parse.js",
 				"bootpath" : "~/hiperborde_code",
