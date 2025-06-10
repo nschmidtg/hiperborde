@@ -27,6 +27,9 @@
 #define PHASE_FADE_OUT 4
 #define MAX_WAVES 10
 
+// Fade-in constants
+#define FADE_IN_TIME 10000.0  // 10 seconds fade-in time
+
 // Breathing effect constants
 #define BREATHING_TRANSITION_TIME 3000
 #define FADE_OUT_TIME 5000  // 5 seconds fade out time
@@ -70,6 +73,8 @@ struct AnimationState {
     uint8_t currentBrightness = 0;
     unsigned long lastBreathingUpdate = 0;
     CRGB previousLeds[NUM_LEDS];
+    bool fadeInComplete = false;  // Track if fade-in is complete
+    unsigned long fadeInStartTime = 0;  // When fade-in started
 } state;
 
 CRGB rgb(uint8_t red, uint8_t green, uint8_t blue) {
@@ -110,6 +115,8 @@ void resetAnimation() {
     }
     
     state.currentPhase = PHASE_CONTEMPLATIVE;
+    state.fadeInComplete = false;
+    state.fadeInStartTime = millis();
 }
 
 void updateLCD() {
@@ -217,9 +224,22 @@ struct SerialProtocol {
 
 
 void showContemplativeEffect() {
-    // Scale background color by global brightness
-    uint8_t bgRed = (255 * state.globalBrightness) / MAX_BRIGHTNESS;
-    uint8_t bgGreen = (127 * state.globalBrightness) / MAX_BRIGHTNESS;
+    // Calculate fade-in factor
+    float fadeInFactor = 1.0;
+    if (!state.fadeInComplete) {
+        unsigned long currentTime = millis();
+        unsigned long elapsed = currentTime - state.fadeInStartTime;
+        if (elapsed < FADE_IN_TIME) { // 10 seconds fade-in
+            fadeInFactor = (float)elapsed / FADE_IN_TIME;
+        } else {
+            state.fadeInComplete = true;
+            fadeInFactor = 1.0;
+        }
+    }
+
+    // Scale background color by global brightness and fade-in factor
+    uint8_t bgRed = (255 * state.globalBrightness * fadeInFactor) / MAX_BRIGHTNESS;
+    uint8_t bgGreen = (127 * state.globalBrightness * fadeInFactor) / MAX_BRIGHTNESS;
     fill_solid(leds, NUM_LEDS, rgb(bgRed, bgGreen, 0));  // Warm orange background
     
     // Start new waves when impulse is received
