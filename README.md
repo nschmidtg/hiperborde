@@ -1,10 +1,14 @@
 # Hiperborde LED Installation
 
-An interactive LED installation that responds to audio input through a Max/MSP interface, creating dynamic wave patterns and visual effects on LED strips.
+An interactive LED installation that responds to real-time ocean wave data from Valparaíso's coast, creating dynamic wave patterns and visual effects on LED strips. The installation uses [marine weather](https://open-meteo.com/en/docs/marine-weather-api) data to drive the visual patterns, creating a direct connection between the ocean's state and the light installation.
+
+## Project Information
+
+This project is funded by the Ministerio de las Culturas, las artes y el patrimonio of Chile, through its Fondart Nacional, Línea Creación Artística - Nuevos Medios 2024. Folio 722614.
 
 ## Features
 
-- Real-time audio-reactive LED animations
+- Real-time ocean wave data visualization
 - Multiple animation phases:
   - Contemplative: Smooth wave patterns with fade-in background
   - Chaos: Random flash patterns
@@ -13,6 +17,21 @@ An interactive LED installation that responds to audio input through a Max/MSP i
 - LCD display for status and controls
 - Adjustable brightness control via buttons
 - Serial communication protocol for Max/MSP integration
+
+## How It Works
+
+The installation uses the Open-Meteo Marine Weather API to fetch real-time wave data from a specific point off the coast of Valparaíso (-33.035542, -71.601869). The system:
+
+1. Fetches wave height and period data from the API
+2. Maps the wave parameters to visual effects:
+   - Wave height → Width and brightness of LED waves
+   - Wave period → Timing of wave animations
+3. Uses a state machine in Max/MSP to:
+   - Trigger light phase changes
+   - Synchronize with sound design
+   - Manage the transition between different visual states
+
+The Arduino receives this data through a custom serial protocol and translates it into dynamic light patterns, creating a real-time visualization of the ocean's state.
 
 ## Hardware Requirements
 
@@ -24,13 +43,13 @@ An interactive LED installation that responds to audio input through a Max/MSP i
 
 ## Software Requirements
 
-- Arduino IDE (only for library management)
 - Required Arduino libraries:
   - FastLED
   - LiquidCrystal
 - Max/MSP (for the control interface)
 - avr-gcc toolchain (for compilation)
 - avrdude (for uploading)
+- curl (for API requests)
 
 ## Installation
 
@@ -40,13 +59,21 @@ An interactive LED installation that responds to audio input through a Max/MSP i
    cd hiperborde
    ```
 
-2. Install required Arduino libraries:
-   - Open Arduino IDE
-   - Go to Tools > Manage Libraries
-   - Search and install:
-     - FastLED
-     - LiquidCrystal
-   - Note: We only use Arduino IDE for library management, not for compilation or uploading
+2. Install required Arduino libraries using arduino-cli:
+   ```bash
+   # Install arduino-cli if not already installed
+   brew install arduino-cli  # macOS
+   # or
+   sudo apt-get install arduino-cli  # Linux
+
+   # Initialize arduino-cli
+   arduino-cli core update-index
+   arduino-cli core install arduino:avr
+
+   # Install required libraries
+   arduino-cli lib install "FastLED"
+   arduino-cli lib install "LiquidCrystal"
+   ```
 
 3. Install avr-gcc and avrdude if not already installed:
    - On macOS (using Homebrew):
@@ -80,8 +107,6 @@ The script will:
 - Start monitoring the serial output
 - Handle any compilation or upload errors
 
-Note: If you get a permission error when trying to access the serial port, you may need to add your user to the `dialout` group (Linux) or install the appropriate USB drivers (macOS).
-
 ## Hardware Setup
 
 1. Connect the LCD Keypad Shield:
@@ -99,15 +124,21 @@ Note: If you get a permission error when trying to access the serial port, you m
 ## Max/MSP Integration
 
 The project includes a Max/MSP patch (`hiperborde.maxpat`) that handles:
-- Audio analysis
+- Real-time API requests to Open-Meteo Marine Weather API
+- Wave data processing and mapping
 - Serial communication with Arduino
-- Control interface for the installation
+- State machine for light phase management
+- Sound design synchronization
 
 To use the Max/MSP interface:
 1. Open `hiperborde.maxpat` in Max/MSP
 2. Select the correct serial port in the patch
 3. Start the audio engine
-4. The patch will automatically communicate with the Arduino
+4. The patch will automatically:
+   - Fetch wave data from the API
+   - Process and map the data
+   - Send commands to the Arduino
+   - Manage light phase transitions
 
 ## Serial Protocol
 
@@ -140,5 +171,10 @@ The Arduino communicates with Max/MSP using a custom protocol:
    - Verify Arduino Mega is selected in the script
    - Check if avr-gcc and avrdude are properly installed
    - Try pressing the reset button on the Arduino before uploading
+
+4. If API data isn't updating:
+   - Check internet connection
+   - Verify API endpoint is accessible
+   - Check Max/MSP console for error messages
 
 
