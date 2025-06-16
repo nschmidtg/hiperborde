@@ -123,7 +123,7 @@ The script will:
    - VCC from led strips to 12V power supply
    - Arduino GND to power supply GND.
 
-More details about hardware setup can be found on the document Instrucciones de montaje.docx
+More details about hardware setup can be found on the document [Instrucciones de montaje.docx](Instrucciones%20de%20montaje.docx)
 
 
 ## Max/MSP Integration
