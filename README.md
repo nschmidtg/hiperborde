@@ -37,8 +37,9 @@ The Arduino receives this data through a custom serial protocol and translates i
 
 - Arduino Mega board
 - LCD Keypad Shield (includes 16x2 LCD display and 5 buttons)
-- WS2811 LED strip (100 LEDs)
-- 12V power supply (sufficient for LED strip)
+- 2 WS2811 LED strip
+- 12V power supply (sufficient for LED strip ~10A)
+- 1k Ohm resistor
 - USB cable for programming and communication
 
 ## Software Requirements
@@ -116,43 +117,43 @@ The script will:
      - 5 buttons (UP, DOWN, LEFT, RIGHT, SELECT)
      - All necessary connections are handled by the shield
 
-2. Connect the LED strip:
-   - Data pin to Arduino pin 2
-   - VCC to 12V power supply
-   - GND to ground
+2. Connect the LED strips and Arduino:
+   - Arduino pin 2 to Protoboard with the resistor in serie
+   - Led strips connected in parellel into the other end of the resistor.
+   - VCC from led strips to 12V power supply
+   - Arduino GND to power supply GND.
+
 
 ## Max/MSP Integration
 
-The project includes a Max/MSP patch (`hiperborde.maxpat`) that handles:
+The project includes a Max/MSP patch (`cerebro.maxpat`) that handles:
 - Real-time API requests to Open-Meteo Marine Weather API
 - Wave data processing and mapping
 - Serial communication with Arduino
 - State machine for light phase management
-- Sound design synchronization
+- Sound design
+- Sync between sound and lights
+- Control to trigger waves based on parameters from Open-Meteo Marine Weather API.
 
 To use the Max/MSP interface:
-1. Open `hiperborde.maxpat` in Max/MSP
-2. Select the correct serial port in the patch
-3. Start the audio engine
-4. The patch will automatically:
+1. Open `cerebro.maxpat` in Max/MSP
+2. Start the audio engine
+3. The patch will automatically:
    - Fetch wave data from the API
    - Process and map the data
    - Send commands to the Arduino
    - Manage light phase transitions
+   - Start audio and sync with lightning
 
 ## Serial Protocol
 
 The Arduino communicates with Max/MSP using a custom protocol:
 - Packet size: 6 bytes
-- Format: [sync_byte, height, width, speed, start_wave, phase]
-- Special bytes:
-  - 255: Sync byte
-  - 249: Reset
+- Format: [sync_byte (255), height, width, speed, start_wave, phase]
+- phase bytes:
+  - 249: Reset (start from the beginning)
   - 250: Silence 1
-  - 251: Peak
-  - 252: Silence 2
-  - 253: Break
-  - 254: Silence 3
+  - 251: Silence 2
 
 ## Troubleshooting
 

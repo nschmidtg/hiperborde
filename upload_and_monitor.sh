@@ -2,7 +2,7 @@
 
 # Set variables
 # SKETCH_NAME="Simple/Simple.ino"  # Change this to your actual .ino file name
-SKETCH_NAME="LedStripIndependentCursor/LedStripIndependentCursor.ino"  # Change this to your actual .ino file name
+SKETCH_NAME="LedStrip/LedStrip.ino"  # Change this to your actual .ino file name
 BOARD_FQBN="arduino:avr:mega"  # Fully Qualified Board Name for Arduino Mega
 BAUD_RATE=230400               # Baud rate for serial communication
 
