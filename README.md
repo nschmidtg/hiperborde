@@ -123,6 +123,8 @@ The script will:
    - VCC from led strips to 12V power supply
    - Arduino GND to power supply GND.
 
+More details about hardware setup can be found on the document Instrucciones de montaje.docx
+
 
 ## Max/MSP Integration
 
@@ -151,9 +153,12 @@ The Arduino communicates with Max/MSP using a custom protocol:
 - Packet size: 6 bytes
 - Format: [sync_byte (255), height, width, speed, start_wave, phase]
 - phase bytes:
-  - 249: Reset (start from the beginning)
+  - 249: Reset
   - 250: Silence 1
-  - 251: Silence 2
+  - 251: Peak (deactivated from patch)
+  - 252: Silence 2
+  - 253: Break (deactivated from patch)
+  - 254: Silence 3 (deactivated from patch)
 
 ## Troubleshooting
 

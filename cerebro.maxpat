@@ -54,7 +54,7 @@
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 914.0, 100.0, 780.0, 933.0 ],
+						"rect" : [ 34.0, 100.0, 1660.0, 933.0 ],
 						"gridsize" : [ 15.0, 15.0 ],
 						"visible" : 1,
 						"boxes" : [ 							{
@@ -187,7 +187,7 @@
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
 									"patching_rect" : [ 1780.5, 895.0, 29.5, 22.0 ],
-									"text" : "251"
+									"text" : "252"
 								}
 
 							}
@@ -208,8 +208,8 @@
 									"maxclass" : "comment",
 									"numinlets" : 1,
 									"numoutlets" : 0,
-									"patching_rect" : [ 1713.0, 832.0, 150.0, 20.0 ],
-									"text" : "increcendo, peak, break"
+									"patching_rect" : [ 1713.0, 832.0, 177.0, 20.0 ],
+									"text" : "increcendo, silence, silence"
 								}
 
 							}
@@ -810,7 +810,7 @@
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
 									"patching_rect" : [ 1262.0, 1218.0, 130.0, 22.0 ],
-									"text" : "255 207 24 115 0 249"
+									"text" : "255 144 18 120 0 252"
 								}
 
 							}
@@ -1182,7 +1182,7 @@
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
 									"patching_rect" : [ 1603.0, 412.0, 149.0, 35.0 ],
-									"text" : "get hourly::wave_period[21]"
+									"text" : "get hourly::wave_period[23]"
 								}
 
 							}
@@ -1274,7 +1274,7 @@
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
 									"patching_rect" : [ 1386.0, 397.0, 159.0, 22.0 ],
-									"text" : "get hourly::wave_height[21]"
+									"text" : "get hourly::wave_height[23]"
 								}
 
 							}
@@ -2274,7 +2274,7 @@
 
 							}
  ],
-						"originid" : "pat-28"
+						"originid" : "pat-8"
 					}
 ,
 					"patching_rect" : [ 392.0, 467.0, 80.0, 22.0 ],
@@ -2459,7 +2459,7 @@
 									"addpoints_with_curve" : [ 0.0, 0.0, 0, 0.0, 30884.955752212390507, 1.0, 0, 0.545, 480000.0, 1.0, 0, 0.5 ],
 									"bgcolor" : [ 0.0, 0.0, 0.0, 1.0 ],
 									"classic_curve" : 1,
-									"domain" : 30000.0,
+									"domain" : 480000.0,
 									"grid" : 1,
 									"gridcolor" : [ 1.0, 1.0, 1.0, 1.0 ],
 									"gridstep_x" : 60000.0,
@@ -2619,7 +2619,7 @@
 									"addpoints_with_curve" : [ 0.0, 0.0, 0, 0.0, 30088.495575221237232, 1.0, 0, 0.695, 480000.0, 1.0, 0, 0.7 ],
 									"bgcolor" : [ 0.0, 0.0, 0.0, 1.0 ],
 									"classic_curve" : 1,
-									"domain" : 30000.0,
+									"domain" : 480000.0,
 									"grid" : 1,
 									"gridcolor" : [ 1.0, 1.0, 0.949019607843137, 1.0 ],
 									"gridstep_x" : 60000.0,
@@ -3528,7 +3528,7 @@
 
 							}
  ],
-						"originid" : "pat-30"
+						"originid" : "pat-12"
 					}
 ,
 					"patching_rect" : [ 99.0, 467.0, 87.0, 22.0 ],
@@ -4079,7 +4079,7 @@
 
 							}
  ],
-						"originid" : "pat-32"
+						"originid" : "pat-14"
 					}
 ,
 					"patching_rect" : [ 111.0, 139.0, 79.0, 22.0 ],
@@ -4218,7 +4218,7 @@
 
 			}
  ],
-		"originid" : "pat-26",
+		"originid" : "pat-6",
 		"parameters" : 		{
 			"obj-1::obj-22" : [ "mc.live.gain~", "mc.live.gain~", 0 ],
 			"parameterbanks" : 			{
