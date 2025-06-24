@@ -5,6 +5,7 @@
 // LED Configuration
 #define NUM_LEDS 100 // Number of LEDs per strip
 #define DATA_PIN_1 2
+#define DATA_PIN_2 3
 #define MAX_BRIGHTNESS 255  // Maximum brightness value
 #define INITIAL_BRIGHTNESS 60
 #define BRIGHTNESS_STEP 5   // How much to change brightness per button press
@@ -52,7 +53,8 @@ struct Wave {
 };
 
 // Global Variables
-CRGB leds[NUM_LEDS];
+CRGB leds1[NUM_LEDS];
+CRGB leds2[NUM_LEDS];
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 unsigned long lastLCDUpdate = 0;
 
@@ -240,7 +242,8 @@ void showContemplativeEffect() {
     // Scale background color by global brightness and fade-in factor
     uint8_t bgRed = (255 * state.globalBrightness * fadeInFactor) / MAX_BRIGHTNESS;
     uint8_t bgGreen = (127 * state.globalBrightness * fadeInFactor) / MAX_BRIGHTNESS;
-    fill_solid(leds, NUM_LEDS, rgb(bgRed, bgGreen, 0));  // Warm orange background
+    fill_solid(leds1, NUM_LEDS, rgb(bgRed, bgGreen, 0));  // Warm orange background
+    fill_solid(leds2, NUM_LEDS, rgb(bgRed, bgGreen, 0));  // Warm orange background
     
     // Start new waves when impulse is received
     if (state.start) {
@@ -273,7 +276,8 @@ void showContemplativeEffect() {
             color.nscale8_video(brightness);
         
             // Add the color to the current LED (accumulating effect)
-            leds[ledIndex] += color;
+            leds1[ledIndex] += color;
+            leds2[ledIndex] += color;
         }
         
         // Advance wave position
@@ -289,7 +293,8 @@ void showContemplativeEffect() {
 }
 
 void showChaosEffect() {
-    fill_solid(leds, NUM_LEDS, rgb(0, 0, 0));  // Black
+    fill_solid(leds1, NUM_LEDS, rgb(0, 0, 0));  // Black
+    fill_solid(leds2, NUM_LEDS, rgb(0, 0, 0));  // Black
     
     const int maxFlashWidth = 5;
     const int numFlashes = random(2, 6);
@@ -300,7 +305,8 @@ void showChaosEffect() {
         
         for (int j = 0; j < width; j++) {
             if (startPos + j < NUM_LEDS) {
-                leds[startPos + j] = rgb(255, 255, 255);
+                leds1[startPos + j] = rgb(255, 255, 255);
+                leds2[startPos + j] = rgb(255, 255, 255);
             }
         }
     }
@@ -316,7 +322,8 @@ void initializeBreathingEffect() {
 
 void showBreathingEffect() {
     // Clear all LEDs
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    fill_solid(leds1, NUM_LEDS, CRGB::Black);
+    fill_solid(leds2, NUM_LEDS, CRGB::Black);
     
     unsigned long currentTime = millis();
     unsigned long elapsed = currentTime - state.lastBreathingUpdate;
@@ -365,14 +372,15 @@ void showBreathingEffect() {
         0                               // No blue
     );
     
-    fill_solid(leds, NUM_LEDS, color);
+    fill_solid(leds1, NUM_LEDS, color);
+    fill_solid(leds2, NUM_LEDS, color);
     FastLED.show();
 }
 
 void initializeFadeOut() {
     // Store current LED state before starting fade out
     for (int i = 0; i < NUM_LEDS; i++) {
-        state.previousLeds[i] = leds[i];
+        state.previousLeds[i] = leds1[i];
     }
     state.phaseStartTime = millis();
 }
@@ -387,12 +395,15 @@ void showFadeOutEffect() {
         
         // Apply fade to all LEDs
         for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = state.previousLeds[i];
-            leds[i].nscale8_video(fadeFactor * 255);  // Scale brightness by fade factor
+            leds1[i] = state.previousLeds[i];
+            leds1[i].nscale8_video(fadeFactor * 255);  // Scale brightness by fade factor
+            leds2[i] = state.previousLeds[i];
+            leds2[i].nscale8_video(fadeFactor * 255);  // Scale brightness by fade factor
         }
     } else {
         // Fade complete, set all LEDs to black
-        fill_solid(leds, NUM_LEDS, CRGB::Black);
+        fill_solid(leds1, NUM_LEDS, CRGB::Black);
+        fill_solid(leds2, NUM_LEDS, CRGB::Black);
     }
     
     FastLED.show();
@@ -403,9 +414,11 @@ void setup() {
     Serial.begin(230400);
     while (!Serial);
 
-    FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds, NUM_LEDS);
+    FastLED.addLeds<WS2811, DATA_PIN_1, GBR>(leds1, NUM_LEDS);
+    FastLED.addLeds<WS2811, DATA_PIN_2, GBR>(leds2, NUM_LEDS);
     FastLED.setBrightness(MAX_BRIGHTNESS);
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    fill_solid(leds1, NUM_LEDS, CRGB::Black);
+    fill_solid(leds2, NUM_LEDS, CRGB::Black);
     FastLED.show();
     
     lcd.begin(16, 2);
@@ -467,7 +480,8 @@ void loop() {
                 showContemplativeEffect();
                 break;
             case PHASE_WAIT:
-                fill_solid(leds, NUM_LEDS, CRGB::Black);
+                fill_solid(leds1, NUM_LEDS, CRGB::Black);
+                fill_solid(leds2, NUM_LEDS, CRGB::Black);
                 FastLED.show();
                 break;
             case PHASE_CHAOS:
